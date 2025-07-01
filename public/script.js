@@ -1421,7 +1421,8 @@ function handleHeaderScroll() {
     if (!isScrolling) {
         window.requestAnimationFrame(() => {
             const header = document.querySelector('.header');
-            if (!header) return;
+            const container = document.querySelector('.container'); // ✅ Agregar referencia al container
+            if (!header || !container) return;
             
             const content = document.getElementById('content');
             const scrollTop = content ? content.scrollTop : 0;
@@ -1429,8 +1430,10 @@ function handleHeaderScroll() {
             // Solo ocultar si scroll hacia abajo y después de 80px
             if (scrollTop > lastScrollTop && scrollTop > 80) {
                 header.classList.add('hidden');
+                container.classList.add('header-hidden'); // ✅ AGREGAR ESTA LÍNEA
             } else {
                 header.classList.remove('hidden');
+                container.classList.remove('header-hidden'); // ✅ AGREGAR ESTA LÍNEA
             }
             
             lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;

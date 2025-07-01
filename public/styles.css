@@ -14,7 +14,7 @@ body {
     color: #333;
 }
 
-/* Contenedor principal */
+/* Contenedor principal - versión automática */
 .container {
     max-width: 1200px;
     margin: 0 auto;
@@ -24,6 +24,14 @@ body {
     overflow: hidden;
     border: 1px solid #e0e0e0;
     padding-top: 140px;
+    transition: padding-top 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Cuando el header está oculto, reducir padding automáticamente */
+.header.hidden ~ .container,
+.container:has(+ .header.hidden),
+body:has(.header.hidden) .container {
+    padding-top: 20px;
 }
 
 /* Header */
@@ -1242,6 +1250,10 @@ body {
         padding-top: 160px;
     }
 
+    .container.header-hidden {
+        padding-top: 20px;
+    }
+
     .modal-content {
         width: 95%;
         max-height: 90%;
@@ -1339,6 +1351,10 @@ body {
     .container {
         padding-top: 180px;
         border-radius: 8px;
+    }
+
+    .container.header-hidden {
+        padding-top: 15px;
     }
 
     .products-grid {
