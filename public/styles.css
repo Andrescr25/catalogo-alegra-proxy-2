@@ -45,6 +45,8 @@ body {
 
 .header.hidden {
     transform: translateY(-100%);
+    opacity: 0;
+    pointer-events: none;
     box-shadow: none;
 }
 
@@ -805,7 +807,7 @@ body {
     text-transform: capitalize;
     letter-spacing: 0.5px;
     position: sticky;
-    top: 0;
+    top: -2;
     z-index: 10;
     border-radius: 0 8px 8px 0;
     box-shadow: 0 1px 3px rgba(0,0,0,0.08);
