@@ -1418,7 +1418,7 @@ window.addEventListener('offline', () => {
 });
 
 // Header scroll behavior - AGREGAR AL FINAL DEL ARCHIVO
-let lastScrollTop = 0;
+/*let lastScrollTop = 0;
 let isScrolling = false;
 
 function handleHeaderScroll() {
@@ -1446,4 +1446,4 @@ function handleHeaderScroll() {
 // Inicializar scroll listener cuando cargue la página
 document.addEventListener('DOMContentLoaded', function() {
     window.addEventListener('scroll', handleHeaderScroll, { passive: true });
-});
+});*/
