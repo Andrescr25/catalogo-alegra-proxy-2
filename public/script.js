@@ -1416,3 +1416,34 @@ window.addEventListener('offline', () => {
         catalog.updateStatus('offline', 'Sin conexión');
     }
 });
+
+// Header scroll behavior - AGREGAR AL FINAL DEL ARCHIVO
+let lastScrollTop = 0;
+let isScrolling = false;
+
+function handleHeaderScroll() {
+    if (!isScrolling) {
+        window.requestAnimationFrame(() => {
+            const header = document.querySelector('.header');
+            if (!header) return;
+            
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            
+            // Solo ocultar si scroll hacia abajo y después de 80px
+            if (scrollTop > lastScrollTop && scrollTop > 80) {
+                header.classList.add('hidden');
+            } else {
+                header.classList.remove('hidden');
+            }
+            
+            lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
+            isScrolling = false;
+        });
+    }
+    isScrolling = true;
+}
+
+// Inicializar scroll listener cuando cargue la página
+document.addEventListener('DOMContentLoaded', function() {
+    window.addEventListener('scroll', handleHeaderScroll, { passive: true });
+});
