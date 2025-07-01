@@ -187,6 +187,7 @@ body {
     width: 40px;
     height: 40px;
     background: transparent;
+    border: none;
     border-radius: 50%;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -236,7 +237,7 @@ body {
     border-color: #2c3e50;
 }
 
-/* Botones */
+/* Botones base */
 .btn {
     padding: 10px 20px;
     border: 1px solid #d0d0d0;
@@ -271,22 +272,24 @@ body {
     border-color: #34495e;
 }
 
-/* Mejorar el botón principal del modal */
+/* Botón principal mejorado del modal */
 .btn-primary-large {
-    background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
-    color: white !important;
-    border: none !important;
-    font-size: 16px !important;
-    padding: 16px 20px !important;
-    font-weight: 600 !important;
-    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3) !important;
-    transition: all 0.3s ease !important;
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    border: none;
+    font-size: 16px;
+    padding: 16px 20px;
+    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+    transition: all 0.3s ease;
+    border-radius: 6px;
+    cursor: pointer;
 }
 
 .btn-primary-large:hover {
-    transform: translateY(-2px) !important;
-    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4) !important;
-    background: linear-gradient(135deg, #218838 0%, #1abc9c 100%) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+    background: linear-gradient(135deg, #218838 0%, #1abc9c 100%);
 }
 
 /* Indicador de estado */
@@ -455,7 +458,7 @@ body {
     box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
 }
 
-/* Mejorar el área de acciones de búsqueda */
+/* Área de acciones de búsqueda */
 .search-results-actions {
     background: #fff3cd;
     border: 1px solid #ffeaa7;
@@ -874,7 +877,7 @@ body {
 }
 
 .product-card.hidden {
-    display: none !important;
+    display: none;
 }
 
 .product-image-container {
@@ -1229,8 +1232,16 @@ body {
     color: #155724;
 }
 
-/* Responsive */
+/* Responsive Design */
 @media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+
+    .container {
+        padding-top: 160px;
+    }
+
     .modal-content {
         width: 95%;
         max-height: 90%;
@@ -1321,6 +1332,15 @@ body {
 }
 
 @media (max-width: 480px) {
+    body {
+        padding: 5px;
+    }
+
+    .container {
+        padding-top: 180px;
+        border-radius: 8px;
+    }
+
     .products-grid {
         grid-template-columns: 1fr;
         gap: 15px;
@@ -1376,5 +1396,43 @@ body {
     .hidden-controls .btn {
         padding: 6px 10px;
         font-size: 14px;
+    }
+
+    .category-title {
+        font-size: 1rem;
+        padding: 6px 12px;
+    }
+
+    .category-title::before {
+        font-size: 0.9rem;
+    }
+
+    .modal-content {
+        width: 98%;
+        max-height: 95%;
+        border-radius: 8px;
+    }
+
+    .modal-header {
+        padding: 16px 20px;
+    }
+
+    .modal-body {
+        padding: 16px 20px;
+    }
+
+    .modal-footer {
+        padding: 16px 20px;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .modal-stats {
+        order: 2;
+    }
+
+    .modal-actions {
+        order: 1;
+        width: 100%;
     }
 }
