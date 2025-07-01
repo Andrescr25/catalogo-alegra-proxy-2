@@ -1310,21 +1310,6 @@ body {
         font-size: 13px;
     }
 
-    .category-title {
-        font-size: 1rem;
-        padding: 6px 12px;
-        margin-bottom: 12px;
-    }
-
-    .category-title::before {
-        font-size: 0.9rem;
-    }
-
-    .category-title .category-count {
-        font-size: 0.7rem;
-        padding: 1px 6px;
-    }
-
     .admin-controls {
         grid-template-columns: 1fr;
         gap: 16px;
@@ -2126,38 +2111,6 @@ body {
 }
 
 
-.category-title:hover {
-    background: linear-gradient(90deg, #e9ecef 0%, #f8f9fa 100%);
-    box-shadow: 0 2px 6px rgba(0,0,0,0.12);
-}
-
-.category-title::before {
-    content: "📂";
-    font-size: 1rem;
-    opacity: 0.7;
-    transition: opacity 0.2s ease;
-}
-
-.category-title:hover::before {
-    opacity: 1;
-}
-
-.category-title .category-name {
-    flex: 1;
-}
-
-.category-title .category-count {
-    margin-left: auto;
-    background: #2c3e50;
-    color: white;
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    min-width: 20px;
-    text-align: center;
-}
-
 .products-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -2592,20 +2545,6 @@ body {
         font-size: 13px;
     }
 
-    .category-title {
-        font-size: 1rem;
-        padding: 6px 12px;
-        margin-bottom: 12px;
-    }
-
-    .category-title::before {
-        font-size: 0.9rem;
-    }
-
-    .category-title .category-count {
-        font-size: 0.7rem;
-        padding: 1px 6px;
-    }
 
     .admin-controls {
         grid-template-columns: 1fr;
