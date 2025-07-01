@@ -2,22 +2,55 @@ const express = require('express');
 const cors = require('cors');
 const https = require('https');
 const path = require('path');
+require('dotenv').config(); // ← AGREGADO: Para cargar variables de entorno
 
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT || 3001; // ← CAMBIADO: Usa variable de entorno
 
 // Configuración de CORS
 app.use(cors({
-    origin: '*',
+    origin: process.env.CORS_ORIGIN || '*', // ← CAMBIADO: Usa variable de entorno
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use(express.json());
 
-// Configuración de Alegra
+// ← CAMBIADO: Configuración de Alegra usando variables de entorno
 const ALEGRA_API_URL = 'https://api.alegra.com/api/v1';
-const ALEGRA_AUTH = 'Basic dGFjaGlmYWN0dXJhc0BnbWFpbC5jb206YjNhODRhYmI2ODk3MTgwZDM4ODk=';
+
+// Función para generar auth header desde variables de entorno
+function getAlegraAuth() {
+    const email = process.env.ALEGRA_EMAIL;
+    const token = process.env.ALEGRA_TOKEN;
+    
+    if (!email || !token) {
+        console.error('❌ Variables de entorno ALEGRA_EMAIL y ALEGRA_TOKEN son requeridas');
+        return null;
+    }
+    
+    const credentials = Buffer.from(`${email}:${token}`).toString('base64');
+    return `Basic ${credentials}`;
+}
+
+const ALEGRA_AUTH = getAlegraAuth();
+
+// ← AGREGADO: Middleware para verificar configuración
+app.use((req, res, next) => {
+    // Solo verificar en rutas de API
+    if (req.path.startsWith('/api/') && !ALEGRA_AUTH) {
+        return res.status(500).json({
+            error: 'Servidor mal configurado',
+            message: 'Variables de entorno ALEGRA_EMAIL y ALEGRA_TOKEN son requeridas',
+            env_status: {
+                ALEGRA_EMAIL: process.env.ALEGRA_EMAIL ? 'Configurado' : 'Faltante',
+                ALEGRA_TOKEN: process.env.ALEGRA_TOKEN ? 'Configurado' : 'Faltante',
+                NODE_ENV: process.env.NODE_ENV || 'development'
+            }
+        });
+    }
+    next();
+});
 
 // Middleware para logging
 app.use((req, res, next) => {
@@ -74,6 +107,65 @@ function makeHttpsRequest(url, options = {}) {
     });
 }
 
+// ← AGREGADO: Endpoint para probar conexión con Alegra
+app.get('/api/test-alegra', async (req, res) => {
+    try {
+        console.log('🔗 Probando conexión con Alegra...');
+        
+        if (!ALEGRA_AUTH) {
+            return res.status(500).json({
+                status: 'error',
+                message: 'Credenciales de Alegra no configuradas',
+                env_check: {
+                    ALEGRA_EMAIL: process.env.ALEGRA_EMAIL ? 'OK' : 'FALTANTE',
+                    ALEGRA_TOKEN: process.env.ALEGRA_TOKEN ? 'OK' : 'FALTANTE'
+                }
+            });
+        }
+        
+        // Test simple: obtener información de la empresa
+        const url = `${ALEGRA_API_URL}/company`;
+        const response = await makeHttpsRequest(url, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'Authorization': ALEGRA_AUTH,
+                'User-Agent': 'Node.js Proxy Server'
+            }
+        });
+        
+        if (!response.ok) {
+            return res.status(500).json({
+                status: 'error',
+                message: 'Error al conectar con Alegra',
+                alegra_status: response.status,
+                alegra_response: response.data,
+                credentials_check: {
+                    email: process.env.ALEGRA_EMAIL || 'No configurado',
+                    token_length: process.env.ALEGRA_TOKEN ? process.env.ALEGRA_TOKEN.length : 0
+                }
+            });
+        }
+        
+        res.json({
+            status: 'success',
+            message: 'Conexión con Alegra exitosa',
+            company: response.data.name || 'Empresa conectada',
+            company_data: response.data,
+            timestamp: new Date().toISOString()
+        });
+        
+    } catch (error) {
+        console.error('❌ Test de Alegra falló:', error.message);
+        res.status(500).json({
+            status: 'error',
+            message: 'Error en test de conexión',
+            error: error.message,
+            timestamp: new Date().toISOString()
+        });
+    }
+});
+
 // Endpoint para obtener productos
 app.get('/api/productos', async (req, res) => {
     try {
@@ -109,7 +201,12 @@ app.get('/api/productos', async (req, res) => {
                 error: `Error de Alegra: ${response.status} ${response.statusText}`,
                 alegra_response: response.data,
                 alegra_headers: response.headers,
-                request_url: url
+                request_url: url,
+                suggestions: [
+                    'Verifica las credenciales en el archivo .env',
+                    'Confirma que el token de Alegra no haya expirado',
+                    'Revisa que la cuenta tenga permisos de lectura'
+                ]
             });
         }
 
@@ -150,7 +247,8 @@ app.get('/api/productos', async (req, res) => {
                 active_filtered: activeProducts.length,
                 inactive_filtered: data.length - activeProducts.length,
                 has_more: data.length === 30,
-                sample_statuses: sampleStatuses
+                sample_statuses: sampleStatuses,
+                timestamp: new Date().toISOString()
             }
         };
         
@@ -163,7 +261,12 @@ app.get('/api/productos', async (req, res) => {
             error: 'Error interno del servidor proxy', 
             message: error.message,
             type: error.name,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            suggestions: [
+                'Verifica que el servidor de Alegra esté disponible',
+                'Revisa la configuración de red',
+                'Confirma que las credenciales sean válidas'
+            ]
         });
     }
 });
@@ -233,43 +336,169 @@ app.get('/api/productos-count', async (req, res) => {
             pages_tested: Math.ceil(start / 30),
             max_start_tested: start - 30,
             detailed_results: results,
-            conclusion: hasMore ? 'Puede haber más productos' : 'Todos los productos encontrados'
+            conclusion: hasMore ? 'Puede haber más productos' : 'Todos los productos encontrados',
+            timestamp: new Date().toISOString()
         });
         
     } catch (error) {
         console.error('💥 Error verificando productos:', error);
         res.status(500).json({
-            error: error.message
+            error: error.message,
+            timestamp: new Date().toISOString()
         });
     }
 });
 
-// Servir archivos estáticos
+// ← AGREGADO: Endpoint para obtener categorías
+app.get('/api/categorias', async (req, res) => {
+    try {
+        console.log('📂 Obteniendo categorías de Alegra...');
+        
+        const url = `${ALEGRA_API_URL}/item-categories`;
+        const response = await makeHttpsRequest(url, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'Authorization': ALEGRA_AUTH,
+                'User-Agent': 'Node.js Proxy Server'
+            }
+        });
+        
+        if (!response.ok) {
+            return res.status(500).json({
+                error: `Error de Alegra: ${response.status}`,
+                alegra_response: response.data
+            });
+        }
+        
+        res.json({
+            categories: response.data,
+            count: response.data.length,
+            timestamp: new Date().toISOString()
+        });
+        
+    } catch (error) {
+        console.error('❌ Error al obtener categorías:', error);
+        res.status(500).json({
+            error: 'Error al obtener categorías',
+            message: error.message
+        });
+    }
+});
+
+// Servir archivos estáticos desde 'public'
 app.use(express.static('public'));
 
-// Endpoint de salud
+// ← MEJORADO: Endpoint de salud con más información
 app.get('/health', (req, res) => {
+    const envStatus = {
+        ALEGRA_EMAIL: process.env.ALEGRA_EMAIL ? '✅ Configurado' : '❌ Faltante',
+        ALEGRA_TOKEN: process.env.ALEGRA_TOKEN ? '✅ Configurado' : '❌ Faltante',
+        NODE_ENV: process.env.NODE_ENV || 'development',
+        PORT: process.env.PORT || 'default (3001)',
+        CORS_ORIGIN: process.env.CORS_ORIGIN || 'default (*)'
+    };
+    
     res.json({ 
-        status: 'OK', 
+        status: 'OK',
+        service: 'Catálogo Productos API',
         timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
         alegra_configured: !!ALEGRA_AUTH,
         alegra_url: ALEGRA_API_URL,
         node_version: process.version,
         port: PORT,
-        fetch_method: 'native https'
+        fetch_method: 'native https',
+        environment: envStatus,
+        available_endpoints: [
+            'GET /health',
+            'GET /api/test-alegra',
+            'GET /api/productos',
+            'GET /api/productos-count',
+            'GET /api/categorias'
+        ]
+    });
+});
+
+// ← AGREGADO: Manejo de rutas no encontradas
+app.use('*', (req, res) => {
+    // Si es una ruta de API, devolver JSON
+    if (req.originalUrl.startsWith('/api/')) {
+        return res.status(404).json({
+            error: 'Endpoint no encontrado',
+            available_endpoints: [
+                'GET /api/productos',
+                'GET /api/productos-count',
+                'GET /api/categorias',
+                'GET /api/test-alegra',
+                'GET /health'
+            ],
+            requested: req.originalUrl
+        });
+    }
+    
+    // Para rutas del frontend, servir index.html (SPA)
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// ← AGREGADO: Manejo global de errores
+app.use((error, req, res, next) => {
+    console.error('💥 Error no manejado:', error);
+    res.status(500).json({
+        error: 'Error interno del servidor',
+        message: error.message,
+        timestamp: new Date().toISOString()
     });
 });
 
 // Iniciar servidor
 app.listen(PORT, () => {
-    console.log(`🚀 Servidor proxy ejecutándose en http://localhost:${PORT}`);
-    console.log(`📡 Proxy para Alegra API configurado: ${ALEGRA_API_URL}`);
-    console.log(`🌐 Archivos estáticos servidos desde: ./public`);
-    console.log(`🔑 Autenticación configurada: ${ALEGRA_AUTH ? 'SÍ' : 'NO'}`);
-    console.log(`🛠️  Usando módulo HTTPS nativo (sin node-fetch)`);
-    console.log(`📋 Endpoints disponibles:`);
-    console.log(`   - GET  /health`);
-    console.log(`   - GET  /api/productos`);
-    console.log(`   - GET  /api/productos-count`);
-    console.log(`\n💡 Para verificar productos: curl http://localhost:${PORT}/api/productos-count`);
+    console.log(`
+🚀 Servidor proxy ejecutándose en http://localhost:${PORT}
+📡 Proxy para Alegra API: ${ALEGRA_API_URL}
+🌐 Archivos estáticos: ./public
+🛠️  Método HTTP: HTTPS nativo (sin node-fetch)
+
+🔧 Variables de entorno:
+   ALEGRA_EMAIL: ${process.env.ALEGRA_EMAIL ? '✅ Configurado' : '❌ Faltante'}
+   ALEGRA_TOKEN: ${process.env.ALEGRA_TOKEN ? '✅ Configurado' : '❌ Faltante'}
+   NODE_ENV: ${process.env.NODE_ENV || 'development'}
+   PORT: ${PORT}
+   CORS_ORIGIN: ${process.env.CORS_ORIGIN || '*'}
+
+📋 Endpoints disponibles:
+   - GET  /health                 (Estado del servidor)
+   - GET  /api/test-alegra        (Probar conexión con Alegra)
+   - GET  /api/productos          (Obtener productos)
+   - GET  /api/productos-count    (Contar productos)
+   - GET  /api/categorias         (Obtener categorías)
+
+🔗 URLs de prueba:
+   - Health: http://localhost:${PORT}/health
+   - Test Alegra: http://localhost:${PORT}/api/test-alegra
+   - Productos: http://localhost:${PORT}/api/productos
+    `);
+
+    // ← AGREGADO: Verificación inicial de configuración
+    if (!ALEGRA_AUTH) {
+        console.log(`
+❌ ADVERTENCIA: Variables de entorno no configuradas
+   Crea un archivo .env con:
+   ALEGRA_EMAIL=tu-email@empresa.com
+   ALEGRA_TOKEN=tu-token-de-alegra
+        `);
+    } else {
+        console.log(`✅ Credenciales de Alegra configuradas correctamente`);
+    }
+});
+
+// ← AGREGADO: Manejo de cierre graceful
+process.on('SIGTERM', () => {
+    console.log('👋 Cerrando servidor...');
+    process.exit(0);
+});
+
+process.on('SIGINT', () => {
+    console.log('👋 Cerrando servidor...');
+    process.exit(0);
 });
