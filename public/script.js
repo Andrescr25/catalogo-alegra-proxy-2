@@ -13,7 +13,7 @@ class ProductCatalog {
         this.isInitialLoad = true;
         
         // API Configuration
-        this.apiUrl = 'http://localhost:3001/api/productos';
+        this.apiUrl = window.location.origin + '/api/productos';
         this.authHeader = '';
         
         this.init();
