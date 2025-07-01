@@ -1399,10 +1399,6 @@ document.addEventListener('keydown', function(event) {
     }
 });
 
-// Initialize when page loads
-document.addEventListener('DOMContentLoaded', function() {
-    catalog = new ProductCatalog();
-});
 
 // Handle online/offline status
 window.addEventListener('online', () => {
@@ -1417,7 +1413,7 @@ window.addEventListener('offline', () => {
     }
 });
 
-// Header scroll behavior - AGREGAR AL FINAL DEL ARCHIVO
+// Header scroll behavior - REEMPLAZAR TODO EL CÓDIGO ANTERIOR
 let lastScrollTop = 0;
 let isScrolling = false;
 
@@ -1443,7 +1439,8 @@ function handleHeaderScroll() {
     isScrolling = true;
 }
 
-// Inicializar scroll listener cuando cargue la página
+// Inicializar scroll listener cuando cargue la página - COMBINAR CON EL EXISTENTE
 document.addEventListener('DOMContentLoaded', function() {
+    catalog = new ProductCatalog();
     window.addEventListener('scroll', handleHeaderScroll, { passive: true });
 });
