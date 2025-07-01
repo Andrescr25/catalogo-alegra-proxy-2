@@ -807,7 +807,7 @@ body {
     text-transform: capitalize;
     letter-spacing: 0.5px;
     position: sticky;
-    top: -2;
+    top: -2px;
     z-index: 10;
     border-radius: 0 8px 8px 0;
     box-shadow: 0 1px 3px rgba(0,0,0,0.08);
@@ -2125,27 +2125,6 @@ body {
     margin-bottom: 40px;
 }
 
-.category-title {
-    font-size: 1.1rem;
-    color: #666;
-    margin-bottom: 16px;
-    padding: 8px 16px;
-    background: linear-gradient(90deg, #f8f9fa 0%, #ffffff 100%);
-    border-left: 4px solid #2c3e50;
-    font-weight: 500;
-    text-transform: capitalize;
-    letter-spacing: 0.5px;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    border-radius: 0 8px 8px 0;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    backdrop-filter: blur(4px);
-    transition: all 0.2s ease;
-}
 
 .category-title:hover {
     background: linear-gradient(90deg, #e9ecef 0%, #f8f9fa 100%);
