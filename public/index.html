@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogo de Productos</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="status-indicator" id="statusIndicator">Desconectado</div>
+    
+    <div class="container">
+        <div class="header">
+            <div class="header-top">
+                <div class="logo-section">
+                    <img src="color2.png" alt="Logo de la empresa" class="company-logo" id="companyLogo">
+                    <div class="company-info">
+                        <h1>Catálogo de Productos</h1>
+                        <p class="company-subtitle">Sistema de consulta</p>
+                    </div>
+                </div>
+                
+                <!-- Controles administrativos ocultos -->
+                <div class="admin-access">
+                    <div class="hidden-controls" id="hiddenControls">
+                        <button class="btn btn-primary" onclick="refreshProducts()" id="refreshBtn" title="Actualizar Productos">
+                            📋
+                        </button>
+                        <button class="btn btn-admin" onclick="toggleAdminPanel()" id="adminBtn" title="Panel Admin">
+                            ⚙️
+                        </button>
+                    </div>
+                    
+                    <!-- Área de activación discreta -->
+                    <div class="admin-trigger" onclick="toggleAdminAccess()" title="Toca 3 veces para activar controles"></div>
+                </div>
+            </div>
+            
+            <!-- Barra de búsqueda -->
+            <div class="search-section">
+                <div class="search-container">
+                    <div class="search-input-wrapper">
+                        <input type="text" 
+                               class="main-search" 
+                               id="mainSearch" 
+                               placeholder="Buscar productos por nombre o referencia..." 
+                               oninput="performMainSearch(this.value)"
+                               autocomplete="off">
+                        <button class="search-clear" onclick="clearMainSearch()" id="searchClear" title="Limpiar búsqueda">
+                            ✕
+                        </button>
+                    </div>
+                    <div class="search-results-info" id="searchResultsInfo"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-panel" id="adminPanel">
+            <h3>Panel de Administración</h3>
+            
+            <div class="admin-stats" id="adminStats">
+                <div class="stat-item">
+                    <span>Productos totales:</span>
+                    <span id="totalProducts">0</span>
+                </div>
+                <div class="stat-item">
+                    <span>Productos visibles:</span>
+                    <span id="visibleProducts">0</span>
+                </div>
+                <div class="stat-item">
+                    <span>Productos ocultos:</span>
+                    <span id="hiddenProducts">0</span>
+                </div>
+            </div>
+
+            <div class="admin-controls">
+                <div class="admin-section">
+                    <h4>🔄 Control del Catálogo</h4>
+                    <div class="admin-buttons">
+                        <button class="btn-admin-action" onclick="forceUpdateCatalog()" style="background: #007bff; color: white; border-color: #007bff;">
+                            🔄 Actualizar Catálogo
+                        </button>
+                        <p style="font-size: 12px; color: #666; margin: 8px 0;">
+                            Actualiza todos los productos desde Alegra (puede tomar varios minutos)
+                        </p>
+                    </div>
+                </div>
+
+                <div class="admin-section">
+                    <h4> Gestión de Visibilidad</h4>
+                    <div class="admin-buttons">
+                        <button class="btn-admin-action btn-primary-large" onclick="openProductModal()" style="background: #28a745; color: white; border-color: #28a745; font-size: 16px; padding: 16px; font-weight: 600;">
+                            📋 Gestionar Productos
+                        </button>
+                        <p style="font-size: 12px; color: #666; margin: 8px 0;">
+                            Abre el panel completo para mostrar/ocultar productos individualmente
+                        </p>
+                        <button class="btn-admin-action" onclick="resetHiddenProducts()" style="background: #6c757d; color: white; border-color: #6c757d;">
+                            🔄 Mostrar Todos los Productos
+                        </button>
+                    </div>
+                </div>
+
+                <div class="admin-section">
+                    <h4>🔍 Búsqueda Avanzada</h4>
+                    <input type="text" class="search-admin" id="productSearch" placeholder="Buscar por nombre o referencia..." oninput="searchProducts(this.value)">
+                    <div class="search-results-actions" id="searchResultsActions" style="display: none;">
+                        <p style="font-size: 12px; color: #666; margin: 8px 0;">
+                            💡 Usa el <strong>Gestor de Productos</strong> para ocultar los resultados encontrados
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="category-management">
+                <h4>📂 Gestión por Categorías</h4>
+                <div class="category-list" id="categoryList">
+                    <!-- Se llena dinámicamente -->
+                </div>
+            </div>
+        </div>
+
+        <div class="content" id="content">
+            <div class="loading" id="loading">
+                <div class="loading-spinner"></div>
+                <p>Cargando productos...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de gestión de productos -->
+    <div class="modal" id="productModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🎛️ Gestión de Visibilidad de Productos</h3>
+                <button class="modal-close" onclick="closeProductModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-controls">
+                    <input type="text" class="modal-search" id="modalSearch" placeholder="🔍 Buscar productos..." oninput="filterModalProducts(this.value)">
+                    <button class="btn-modal btn-success" onclick="showAllModalProducts()">Mostrar Todos</button>
+                    <button class="btn-modal btn-danger" onclick="hideAllModalProducts()">Ocultar Todos</button>
+                    <button class="btn-modal" onclick="toggleSelectedProducts()">🔄 Invertir Selección</button>
+                </div>
+                <div class="modal-instructions">
+                    <p><strong>Instrucciones:</strong> ☑️ = Producto oculto | ☐ = Producto visible</p>
+                </div>
+                <div class="products-list" id="modalProductsList">
+                    <!-- Se llena dinámicamente -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="modal-stats" id="modalStats">
+                    0 productos cargados
+                </div>
+                <div class="modal-actions">
+                    <button class="btn-modal" onclick="closeProductModal()">Cancelar</button>
+                    <button class="btn-modal btn-success" onclick="applyProductChanges()">✅ Aplicar Cambios</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+
+<script>
+let lastScrollTop = 0;
+const header = document.querySelector('.header');
+
+window.addEventListener('scroll', () => {
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+
+    if (scrollTop > lastScrollTop && scrollTop > 100) {
+        // Scroll hacia abajo
+        header.classList.add('hidden');
+    } else {
+        // Scroll hacia arriba
+        header.classList.remove('hidden');
+    }
+
+    lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
+});
+</script>
