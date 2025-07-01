@@ -1423,7 +1423,8 @@ function handleHeaderScroll() {
             const header = document.querySelector('.header');
             if (!header) return;
             
-            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            const content = document.getElementById('content');
+            const scrollTop = content ? content.scrollTop : 0;
             
             // Solo ocultar si scroll hacia abajo y después de 80px
             if (scrollTop > lastScrollTop && scrollTop > 80) {
@@ -1442,5 +1443,8 @@ function handleHeaderScroll() {
 // Inicializar scroll listener cuando cargue la página - COMBINAR CON EL EXISTENTE
 document.addEventListener('DOMContentLoaded', function() {
     catalog = new ProductCatalog();
-    window.addEventListener('scroll', handleHeaderScroll, { passive: true });
+    const content = document.getElementById('content');
+    if (content) {
+        content.addEventListener('scroll', handleHeaderScroll, { passive: true });
+    }
 });
