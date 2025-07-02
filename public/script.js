@@ -1421,7 +1421,7 @@ function handleHeaderScroll() {
     if (!isScrolling) {
         window.requestAnimationFrame(() => {
             const header = document.querySelector('.header');
-            const container = document.querySelector('.container'); // ✅ Agregar referencia al container
+            const container = document.querySelector('.container');
             if (!header || !container) return;
             
             const content = document.getElementById('content');
@@ -1430,10 +1430,10 @@ function handleHeaderScroll() {
             // Solo ocultar si scroll hacia abajo y después de 80px
             if (scrollTop > lastScrollTop && scrollTop > 80) {
                 header.classList.add('hidden');
-                container.classList.add('header-hidden'); // ✅ AGREGAR ESTA LÍNEA
+                container.classList.add('header-hidden'); 
             } else {
                 header.classList.remove('hidden');
-                container.classList.remove('header-hidden'); // ✅ AGREGAR ESTA LÍNEA
+                container.classList.remove('header-hidden');
             }
             
             lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;

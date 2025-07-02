@@ -16,7 +16,7 @@ body {
 
 /* Contenedor principal - versión automática */
 .container {
-    max-width: 1200px;
+    max-width: auto;
     margin: 0 auto;
     background: white;
     border-radius: 12px;
@@ -798,9 +798,16 @@ body:has(.header.hidden) .container {
 /* Contenido principal */
 .content {
     padding: 24px;
-    max-height: calc(100vh - 200px);
+    /* Altura cuando header está visible */
+    max-height: calc(100vh - 180px);
     overflow-y: auto;
     scroll-behavior: smooth;
+    transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Cuando el header está oculto, aumentar la altura disponible */
+.container.header-hidden .content {
+    max-height: calc(100vh - 40px);
 }
 
 .category-section {
