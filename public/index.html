@@ -2,11 +2,96 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
     <title>Catálogo de Productos</title>
     <link rel="stylesheet" href="styles.css">
+    
+    <!-- Prevenir zoom y gestos problemáticos -->
+    <style>
+        /* BLOQUEOS ANTI-TONTO PARA TABLETS */
+        * {
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+            user-select: none !important;
+            -webkit-touch-callout: none !important;
+            -webkit-tap-highlight-color: transparent !important;
+        }
+        
+        /* Bloquear arrastrar elementos específicos */
+        img, div, span, button, a {
+            -webkit-user-drag: none !important;
+            -khtml-user-drag: none !important;
+            -moz-user-drag: none !important;
+            -o-user-drag: none !important;
+        }
+
+        /* Permitir selección SOLO en campos de búsqueda */
+        input[type="text"], input[type="search"], textarea {
+            -webkit-user-select: text !important;
+            -moz-user-select: text !important;
+            user-select: text !important;
+        }
+
+        /* Prevenir zoom con gestos */
+        html, body {
+            touch-action: pan-y !important;
+            -ms-touch-action: pan-y !important;
+            overscroll-behavior: none !important;
+        }
+
+        /* Indicador de gestos bloqueados */
+        .gesture-block-indicator {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(220, 53, 69, 0.9);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 10000;
+            pointer-events: none;
+            font-weight: 500;
+        }
+
+        .gesture-block-indicator.show {
+            opacity: 1;
+        }
+
+        /* Prevenir pull-to-refresh visual */
+        .no-refresh-zone {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 120px;
+            z-index: 999;
+            pointer-events: none;
+            background: transparent;
+        }
+
+        /* Bloquear context menu visual */
+        *::selection {
+            background: transparent !important;
+        }
+
+        *::-moz-selection {
+            background: transparent !important;
+        }
+    </style>
 </head>
 <body>
+    <!-- Zona anti pull-to-refresh -->
+    <div class="no-refresh-zone"></div>
+    
+    <!-- Indicador de gestos bloqueados -->
+    <div class="gesture-block-indicator" id="gestureIndicator">
+        🚫 Gesto bloqueado
+    </div>
+
     <div class="status-indicator" id="statusIndicator">Desconectado</div>
     
     <div class="container">
@@ -45,7 +130,8 @@
                                id="mainSearch" 
                                placeholder="Buscar productos por nombre o referencia..." 
                                oninput="performMainSearch(this.value)"
-                               autocomplete="off">
+                               autocomplete="off"
+                               spellcheck="false">
                         <button class="search-clear" onclick="clearMainSearch()" id="searchClear" title="Limpiar búsqueda">
                             ✕
                         </button>
@@ -103,7 +189,7 @@
 
                 <div class="admin-section">
                     <h4>🔍 Búsqueda Avanzada</h4>
-                    <input type="text" class="search-admin" id="productSearch" placeholder="Buscar por nombre o referencia..." oninput="searchProducts(this.value)">
+                    <input type="text" class="search-admin" id="productSearch" placeholder="Buscar por nombre o referencia..." oninput="searchProducts(this.value)" spellcheck="false">
                     <div class="search-results-actions" id="searchResultsActions" style="display: none;">
                         <p style="font-size: 12px; color: #666; margin: 8px 0;">
                             💡 Usa el <strong>Gestor de Productos</strong> para ocultar los resultados encontrados
@@ -137,7 +223,7 @@
             </div>
             <div class="modal-body">
                 <div class="modal-controls">
-                    <input type="text" class="modal-search" id="modalSearch" placeholder="🔍 Buscar productos..." oninput="filterModalProducts(this.value)">
+                    <input type="text" class="modal-search" id="modalSearch" placeholder="🔍 Buscar productos..." oninput="filterModalProducts(this.value)" spellcheck="false">
                     <button class="btn-modal btn-success" onclick="showAllModalProducts()">Mostrar Todos</button>
                     <button class="btn-modal btn-danger" onclick="hideAllModalProducts()">Ocultar Todos</button>
                     <button class="btn-modal" onclick="toggleSelectedProducts()">🔄 Invertir Selección</button>
@@ -160,6 +246,149 @@
             </div>
         </div>
     </div>
+    
+    <script>
+        // SISTEMA ANTI-TONTO PARA TABLETS - Solo dispositivos móviles
+        if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+            
+            let touchStartY = 0;
+            let blockedGestures = 0;
+            let consecutiveRefreshAttempts = 0;
+            
+            function showBlockedGesture(message) {
+                blockedGestures++;
+                const indicator = document.getElementById('gestureIndicator');
+                indicator.textContent = `🚫 ${message}`;
+                indicator.classList.add('show');
+                
+                setTimeout(() => {
+                    indicator.classList.remove('show');
+                }, 2000);
+                
+                console.log(`Gesto bloqueado: ${message} (Total: ${blockedGestures})`);
+            }
+            
+            // 1. BLOQUEAR MENÚ CONTEXTUAL (CRÍTICO PARA TABLETS)
+            ['contextmenu', 'selectstart', 'dragstart'].forEach(event => {
+                document.addEventListener(event, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    showBlockedGesture('Menú contextual bloqueado');
+                    return false;
+                }, { passive: false, capture: true });
+            });
+            
+            // 2. BLOQUEAR PULL-TO-REFRESH
+            document.addEventListener('touchstart', (e) => {
+                touchStartY = e.touches[0].clientY;
+            }, { passive: false });
+            
+            document.addEventListener('touchmove', (e) => {
+                const touchY = e.touches[0].clientY;
+                const deltaY = touchY - touchStartY;
+                const isAtTop = window.scrollY <= 0 || document.documentElement.scrollTop <= 0;
+                
+                // Bloquear pull-to-refresh en la parte superior
+                if (isAtTop && deltaY > 0 && deltaY > 30) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    consecutiveRefreshAttempts++;
+                    showBlockedGesture(`Pull-to-refresh bloqueado (${consecutiveRefreshAttempts})`);
+                    
+                    // Si insiste mucho, mostrar advertencia
+                    if (consecutiveRefreshAttempts > 5) {
+                        showPersistentWarning();
+                        consecutiveRefreshAttempts = 0;
+                    }
+                    return false;
+                }
+            }, { passive: false });
+            
+            // 3. BLOQUEAR GESTOS DE ZOOM
+            document.addEventListener('gesturestart', (e) => {
+                e.preventDefault();
+                showBlockedGesture('Zoom bloqueado');
+            }, { passive: false });
+            
+            document.addEventListener('gesturechange', (e) => {
+                e.preventDefault();
+            }, { passive: false });
+            
+            document.addEventListener('gestureend', (e) => {
+                e.preventDefault();
+            }, { passive: false });
+            
+            // 4. BLOQUEAR DOBLE TAP ZOOM
+            let lastTouchEnd = 0;
+            document.addEventListener('touchend', (e) => {
+                const now = Date.now();
+                if (now - lastTouchEnd <= 300) {
+                    e.preventDefault();
+                    showBlockedGesture('Doble tap zoom bloqueado');
+                }
+                lastTouchEnd = now;
+            }, { passive: false });
+            
+            // 5. BLOQUEAR PRESIÓN LARGA
+            let touchTimer;
+            document.addEventListener('touchstart', (e) => {
+                if (e.target.matches('input, textarea, button')) return; // Permitir en elementos interactivos
+                
+                touchTimer = setTimeout(() => {
+                    e.preventDefault();
+                    showBlockedGesture('Presión larga bloqueada');
+                }, 500);
+            }, { passive: false });
+            
+            document.addEventListener('touchend', () => {
+                clearTimeout(touchTimer);
+            }, { passive: true });
+            
+            // 6. MOSTRAR ADVERTENCIA PERSISTENTE
+            function showPersistentWarning() {
+                const warning = document.createElement('div');
+                warning.style.cssText = `
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: #dc3545;
+                    color: white;
+                    padding: 20px;
+                    border-radius: 10px;
+                    z-index: 10000;
+                    text-align: center;
+                    font-weight: bold;
+                    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+                    max-width: 300px;
+                `;
+                warning.innerHTML = `
+                    <h3>⚠️ ADVERTENCIA</h3>
+                    <p>Los gestos están BLOQUEADOS<br>
+                    para proteger el catálogo.</p>
+                    <p style="font-size: 14px; margin-top: 10px;">
+                        Use solo la búsqueda y toque los productos.
+                    </p>
+                `;
+                
+                document.body.appendChild(warning);
+                
+                setTimeout(() => {
+                    if (warning.parentNode) {
+                        warning.remove();
+                    }
+                }, 4000);
+            }
+            
+            // 7. RESETEAR INTENTOS DESPUÉS DE INACTIVIDAD
+            setInterval(() => {
+                consecutiveRefreshAttempts = Math.max(0, consecutiveRefreshAttempts - 1);
+            }, 3000);
+            
+            console.log('🛡️ Sistema anti-tonto para tablets activado');
+        }
+    </script>
+    
     <script src="script.js"></script>
 </body>
 </html>
