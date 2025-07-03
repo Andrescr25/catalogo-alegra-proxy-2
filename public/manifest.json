@@ -24,13 +24,13 @@
       "purpose": "any"
     },
     {
-      "src": "book.png",
+      "src": "color2.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "book.png",
+      "src": "color2.png",
       "sizes": "512x512", 
       "type": "image/png",
       "purpose": "maskable"
