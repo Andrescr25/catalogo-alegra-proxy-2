@@ -1,0 +1,35 @@
+{
+  "name": "Catálogo de Productos",
+  "short_name": "Catálogo",
+  "description": "Sistema de consulta de productos",
+  "start_url": "/",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "theme_color": "#2c3e50",
+  "background_color": "#ffffff",
+  "scope": "/",
+  "lang": "es",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "color2.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "color2.png",
+      "sizes": "512x512", 
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "productivity"],
+  "screenshots": [
+    {
+      "src": "color2.png",
+      "sizes": "540x720",
+      "type": "image/png"
+    }
+  ]
+}
