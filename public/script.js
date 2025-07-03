@@ -1996,3 +1996,86 @@ document.addEventListener('DOMContentLoaded', function() {
     // Verificar estado del SW después de un momento
     setTimeout(checkServiceWorkerStatus, 2000);
 });
+
+// FORZAR MODO QUIOSCO EN CHROME
+function enableKioskMode() {
+    // 1. Ir a pantalla completa automáticamente
+    function requestFullscreen() {
+        const element = document.documentElement;
+        
+        if (element.requestFullscreen) {
+            element.requestFullscreen();
+        } else if (element.mozRequestFullScreen) {
+            element.mozRequestFullScreen();
+        } else if (element.webkitRequestFullscreen) {
+            element.webkitRequestFullscreen();
+        } else if (element.msRequestFullscreen) {
+            element.msRequestFullscreen();
+        }
+    }
+    
+    // 2. Bloquear salida de pantalla completa
+    document.addEventListener('fullscreenchange', () => {
+        if (!document.fullscreenElement) {
+            setTimeout(requestFullscreen, 500);
+        }
+    });
+    
+    document.addEventListener('webkitfullscreenchange', () => {
+        if (!document.webkitFullscreenElement) {
+            setTimeout(requestFullscreen, 500);
+        }
+    });
+    
+    // 3. Bloquear teclas de escape
+    document.addEventListener('keydown', (e) => {
+        // Bloquear F11, Esc, Alt+Tab, etc.
+        if (e.key === 'Escape' || e.key === 'F11' || 
+            (e.altKey && e.key === 'Tab') ||
+            (e.ctrlKey && e.key === 'w') ||
+            (e.ctrlKey && e.key === 'q')) {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+        }
+    });
+    
+    // 4. Ocultar cursor después de inactividad
+    let cursorTimer;
+    function hideCursor() {
+        document.body.style.cursor = 'none';
+    }
+    
+    function showCursor() {
+        document.body.style.cursor = 'default';
+        clearTimeout(cursorTimer);
+        cursorTimer = setTimeout(hideCursor, 5000); // 5 segundos
+    }
+    
+    document.addEventListener('mousemove', showCursor);
+    document.addEventListener('touchstart', showCursor);
+    
+    // 5. Prevenir zoom con rueda del mouse
+    document.addEventListener('wheel', (e) => {
+        if (e.ctrlKey) {
+            e.preventDefault();
+        }
+    }, { passive: false });
+    
+    // 6. Activar pantalla completa al cargar
+    document.addEventListener('click', requestFullscreen, { once: true });
+    
+    // 7. Auto-pantalla completa después de 3 segundos si no hay interacción
+    setTimeout(() => {
+        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+            requestFullscreen();
+        }
+    }, 3000);
+    
+    console.log('🖥️ Modo quiosco activado');
+}
+
+// Activar al cargar la página
+document.addEventListener('DOMContentLoaded', enableKioskMode);
+
+// AGREGAR AL FINAL DE TU script.js:
