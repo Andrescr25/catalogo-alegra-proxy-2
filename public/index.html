@@ -335,41 +335,6 @@
                 clearTimeout(touchTimer);
             }, { passive: true });
             
-            // 6. MOSTRAR ADVERTENCIA PERSISTENTE (SOLO SI INSISTE MUCHO)
-            function showPersistentWarning() {
-                const warning = document.createElement('div');
-                warning.style.cssText = `
-                    position: fixed;
-                    top: 50%;
-                    left: 50%;
-                    transform: translate(-50%, -50%);
-                    background: #dc3545;
-                    color: white;
-                    padding: 20px;
-                    border-radius: 10px;
-                    z-index: 10000;
-                    text-align: center;
-                    font-weight: bold;
-                    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-                    max-width: 300px;
-                `;
-                warning.innerHTML = `
-                    <h3>⚠️ ADVERTENCIA</h3>
-                    <p>Los gestos están BLOQUEADOS<br>
-                    para proteger el catálogo.</p>
-                    <p style="font-size: 14px; margin-top: 10px;">
-                        Use solo la búsqueda y toque los productos.
-                    </p>
-                `;
-                
-                document.body.appendChild(warning);
-                
-                setTimeout(() => {
-                    if (warning.parentNode) {
-                        warning.remove();
-                    }
-                }, 4000);
-            }
             
             // 7. RESETEAR INTENTOS DESPUÉS DE INACTIVIDAD
             setInterval(() => {
