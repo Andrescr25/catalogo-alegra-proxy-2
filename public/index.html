@@ -78,8 +78,18 @@
             background: transparent !important;
         }
 
-        *::-moz-selection {
-            background: transparent !important;
+        /* Efecto visual para logo interactivo */
+        .company-logo {
+            cursor: pointer;
+            transition: transform 0.15s ease;
+        }
+        
+        .company-logo:hover {
+            transform: scale(1.05);
+        }
+        
+        .company-logo:active {
+            transform: scale(0.95);
         }
     </style>
 </head>
@@ -98,7 +108,7 @@
         <div class="header">
             <div class="header-top">
                 <div class="logo-section">
-                    <img src="color2.png" alt="Logo de la empresa" class="company-logo" id="companyLogo">
+                    <img src="color2.png" alt="Logo de la empresa" class="company-logo" id="companyLogo" onclick="handleLogoDoubleClick()" title="Doble toque para ir al inicio">
                     <div class="company-info">
                         <h1>Catálogo de Productos</h1>
                         <p class="company-subtitle">Sistema de consulta</p>
@@ -344,7 +354,41 @@
                 clearTimeout(touchTimer);
             }, { passive: true });
             
-            
+            // 6. MOSTRAR ADVERTENCIA PERSISTENTE
+            function showPersistentWarning() {
+                const warning = document.createElement('div');
+                warning.style.cssText = `
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: #dc3545;
+                    color: white;
+                    padding: 20px;
+                    border-radius: 10px;
+                    z-index: 10000;
+                    text-align: center;
+                    font-weight: bold;
+                    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+                    max-width: 300px;
+                `;
+                warning.innerHTML = `
+                    <h3>⚠️ ADVERTENCIA</h3>
+                    <p>Los gestos están BLOQUEADOS<br>
+                    para proteger el catálogo.</p>
+                    <p style="font-size: 14px; margin-top: 10px;">
+                        Use solo la búsqueda y toque los productos.
+                    </p>
+                `;
+                
+                document.body.appendChild(warning);
+                
+                setTimeout(() => {
+                    if (warning.parentNode) {
+                        warning.remove();
+                    }
+                }, 4000);
+            }
             
             // 7. RESETEAR INTENTOS DESPUÉS DE INACTIVIDAD
             setInterval(() => {
@@ -352,6 +396,90 @@
             }, 3000);
             
             console.log('🛡️ Sistema anti-tonto para tablets activado');
+        }
+        
+        // FUNCIÓN DOBLE TOQUE LOGO - IR AL INICIO
+        let logoClickCount = 0;
+        let logoClickTimer = null;
+        
+        function handleLogoDoubleClick() {
+            logoClickCount++;
+            
+            // Efecto visual en el primer toque
+            const logo = document.getElementById('companyLogo');
+            logo.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                logo.style.transform = 'scale(1)';
+            }, 150);
+            
+            if (logoClickCount === 1) {
+                // Primer toque - iniciar temporizador
+                logoClickTimer = setTimeout(() => {
+                    logoClickCount = 0;
+                    showLogoMessage('Toque el logo nuevamente para ir al inicio');
+                }, 1000);
+            } else if (logoClickCount === 2) {
+                // Segundo toque - ejecutar acción
+                clearTimeout(logoClickTimer);
+                logoClickCount = 0;
+                scrollToTop();
+            }
+        }
+        
+        function scrollToTop() {
+            const content = document.getElementById('content');
+            if (content) {
+                // Scroll suave al inicio del contenedor
+                content.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+                
+                // Mostrar el header si estaba oculto
+                const header = document.querySelector('.header');
+                const container = document.querySelector('.container');
+                if (header && container) {
+                    header.classList.remove('hidden');
+                    container.classList.remove('header-hidden');
+                }
+                
+                showLogoMessage('🔝 Volviendo al inicio...');
+            }
+        }
+        
+        function showLogoMessage(message) {
+            // Crear o actualizar indicador específico para el logo
+            let logoIndicator = document.getElementById('logoIndicator');
+            
+            if (!logoIndicator) {
+                logoIndicator = document.createElement('div');
+                logoIndicator.id = 'logoIndicator';
+                logoIndicator.style.cssText = `
+                    position: fixed;
+                    top: 80px;
+                    right: 20px;
+                    background: rgba(44, 62, 80, 0.95);
+                    color: white;
+                    padding: 10px 15px;
+                    border-radius: 25px;
+                    font-size: 13px;
+                    opacity: 0;
+                    transition: opacity 0.3s;
+                    z-index: 10000;
+                    pointer-events: none;
+                    font-weight: 500;
+                    max-width: 200px;
+                    text-align: center;
+                `;
+                document.body.appendChild(logoIndicator);
+            }
+            
+            logoIndicator.textContent = message;
+            logoIndicator.style.opacity = '1';
+            
+            setTimeout(() => {
+                logoIndicator.style.opacity = '0';
+            }, 2500);
         }
     </script>
     
