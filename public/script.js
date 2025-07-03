@@ -1282,6 +1282,84 @@ class ProductCatalog {
             lastTouchEnd = now;
         }, { passive: false });
         
+        // 5. BLOQUEO ESPECÍFICO PARA IMÁGENES (menú contextual)
+        const blockImageContextMenu = (e) => {
+            if (e.target.tagName === 'IMG') {
+                e.preventDefault();
+                e.stopPropagation();
+                showBlockedGesture('Menú de imagen bloqueado');
+                return false;
+            }
+        };
+
+        // Aplicar a todos los eventos que pueden mostrar menú contextual en imágenes
+        ['contextmenu', 'dragstart', 'selectstart', 'touchstart'].forEach(eventType => {
+            document.addEventListener(eventType, blockImageContextMenu, { 
+                passive: false, 
+                capture: true 
+            });
+        });
+
+        // 6. BLOQUEO DE LONG PRESS EN IMÁGENES (presión larga)
+        let longPressTimer;
+        let isLongPress = false;
+
+        const handleImageTouchStart = (e) => {
+            if (e.target.tagName === 'IMG' || e.target.classList.contains('product-image')) {
+                isLongPress = false;
+                
+                longPressTimer = setTimeout(() => {
+                    isLongPress = true;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    showBlockedGesture('Presión larga en imagen bloqueada');
+                }, 500); // 500ms para considerarlo long press
+            }
+        };
+
+        const handleImageTouchEnd = (e) => {
+            clearTimeout(longPressTimer);
+            if (isLongPress && (e.target.tagName === 'IMG' || e.target.classList.contains('product-image'))) {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }
+        };
+
+        const handleImageTouchMove = (e) => {
+            clearTimeout(longPressTimer);
+        };
+
+        document.addEventListener('touchstart', handleImageTouchStart, { passive: false });
+        document.addEventListener('touchend', handleImageTouchEnd, { passive: false });
+        document.addEventListener('touchmove', handleImageTouchMove, { passive: false });
+
+        // 7. PREVENIR DRAG AND DROP EN IMÁGENES
+        const preventImageDrag = (e) => {
+            if (e.target.tagName === 'IMG') {
+                e.preventDefault();
+                e.dataTransfer.effectAllowed = 'none';
+                e.dataTransfer.dropEffect = 'none';
+                showBlockedGesture('Arrastrar imagen bloqueado');
+                return false;
+            }
+        };
+
+        document.addEventListener('dragstart', preventImageDrag, { passive: false, capture: true });
+        document.addEventListener('drag', preventImageDrag, { passive: false, capture: true });
+
+        // 8. CONFIGURACIÓN ADICIONAL PARA iOS/SAFARI
+        if (/iPhone|iPad|iPod|Safari/i.test(navigator.userAgent)) {
+            // Prevenir callout específico de iOS en imágenes
+            document.addEventListener('touchstart', (e) => {
+                if (e.target.tagName === 'IMG') {
+                    e.target.style.webkitTouchCallout = 'none';
+                    e.target.style.webkitUserSelect = 'none';
+                }
+            }, { passive: false });
+        }
+
+        console.log('🚫 Bloqueos de imágenes aplicados correctamente');
         console.log('✅ Bloqueos de gestos aplicados correctamente');
     }
 }

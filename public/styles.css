@@ -1459,3 +1459,28 @@ body:has(.header.hidden) .container {
         width: 100%;
     }
 }
+
+/* BLOQUEO TOTAL DE MENÚS CONTEXTUALES EN IMÁGENES */
+img {
+    -webkit-touch-callout: none !important;
+    -webkit-user-select: none !important;
+    -webkit-user-drag: none !important;
+    user-select: none !important;
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
+}
+
+.product-image, .company-logo {
+    -webkit-touch-callout: none !important;
+    -webkit-user-select: none !important;
+    -webkit-user-drag: none !important;
+    user-select: none !important;
+    touch-action: manipulation !important;
+}
+
+.product-image-container, .product-card {
+    -webkit-touch-callout: none !important;
+    -webkit-user-select: none !important;
+    user-select: none !important;
+    touch-action: manipulation !important;
+}
