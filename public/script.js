@@ -16,6 +16,11 @@ class ProductCatalog {
         this.apiUrl = window.location.origin + '/api/productos';
         this.authHeader = '';
         
+        // Handlers para bloqueos de gestos
+        this.gestureBlockHandler = null;
+        this.touchStartHandler = null;
+        this.touchMoveHandler = null;
+        
         this.init();
     }
 
@@ -25,6 +30,7 @@ class ProductCatalog {
 
     loadFromCache() {
         const savedProducts = localStorage.getItem('products');
+        const savedCategories = localStorage.getItem('categories'); // NUEVO
         const lastUpdate = localStorage.getItem('lastUpdate');
         
         if (savedProducts) {
@@ -32,14 +38,33 @@ class ProductCatalog {
                 this.products = JSON.parse(savedProducts);
                 this.totalProductsLoaded = this.products.length;
                 
+                // RESTAURAR CATEGORÍAS SI EXISTEN
+                if (savedCategories) {
+                    try {
+                        const categoriesArray = JSON.parse(savedCategories);
+                        this.categories = new Map(categoriesArray);
+                        console.log('📂 Categorías restauradas desde cache');
+                    } catch (e) {
+                        console.warn('Error restaurando categorías, regenerando...');
+                        this.organizeByCategories();
+                    }
+                } else {
+                    this.organizeByCategories();
+                }
+                
                 if (this.products.length > 0) {
                     console.log(`📦 Cargando ${this.products.length} productos desde caché`);
                     this.updateStatus('offline', `📦 Catálogo cargado (${this.products.length} productos)`);
                     this.hasMorePages = false;
                     this.isInitialLoad = false;
-                    this.organizeByCategories();
                     this.renderProducts();
                     this.showCacheInfo(lastUpdate);
+                    
+                    // APLICAR BLOQUEOS DE GESTOS INMEDIATAMENTE
+                    setTimeout(() => {
+                        this.applyGestureBlocks();
+                    }, 500);
+                    
                     return;
                 }
             } catch (error) {
@@ -127,6 +152,7 @@ class ProductCatalog {
         this.stopAutoLoading();
         
         localStorage.removeItem('products');
+        localStorage.removeItem('categories'); // NUEVO
         localStorage.removeItem('lastUpdate');
         
         document.getElementById('content').innerHTML = `
@@ -305,6 +331,11 @@ class ProductCatalog {
         if (this.isInitialLoad) {
             localStorage.setItem('products', JSON.stringify(this.products));
             localStorage.setItem('lastUpdate', new Date().toISOString());
+            
+            // APLICAR BLOQUEOS DESPUÉS DE CARGAR DATOS
+            setTimeout(() => {
+                this.applyGestureBlocks();
+            }, 1000);
         }
 
         this.updateStatus('online', `🔄 Cargando... (${this.totalProductsLoaded} productos)`);
@@ -366,6 +397,15 @@ class ProductCatalog {
         });
 
         this.categories = new Map([...this.categories.entries()].sort());
+        
+        // GUARDAR CATEGORÍAS EN LOCALSTORAGE
+        try {
+            const categoriesArray = Array.from(this.categories.entries());
+            localStorage.setItem('categories', JSON.stringify(categoriesArray));
+            console.log('📂 Categorías guardadas en cache');
+        } catch (error) {
+            console.warn('Error guardando categorías:', error);
+        }
     }
 
     renderProducts() {
@@ -1155,6 +1195,95 @@ class ProductCatalog {
             }, 300);
         }, 3000);
     }
+
+    // NUEVO MÉTODO: Aplicar bloqueos de gestos
+    applyGestureBlocks() {
+        console.log('🛡️ Aplicando bloqueos de gestos...');
+        
+        // Solo aplicar en dispositivos móviles
+        if (!/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+            return;
+        }
+        
+        // Variables para control
+        let touchStartY = 0;
+        let blockedGestures = 0;
+        let consecutiveRefreshAttempts = 0;
+        
+        const showBlockedGesture = (message) => {
+            blockedGestures++;
+            const indicator = document.getElementById('gestureIndicator');
+            if (indicator) {
+                indicator.textContent = `🚫 ${message}`;
+                indicator.classList.add('show');
+                
+                setTimeout(() => {
+                    indicator.classList.remove('show');
+                }, 2000);
+            }
+            console.log(`Gesto bloqueado: ${message} (Total: ${blockedGestures})`);
+        };
+        
+        // 1. BLOQUEAR MENÚ CONTEXTUAL (CRÍTICO)
+        ['contextmenu', 'selectstart', 'dragstart'].forEach(eventType => {
+            document.removeEventListener(eventType, this.gestureBlockHandler); // Remover existente
+            document.addEventListener(eventType, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                showBlockedGesture('Menú contextual bloqueado');
+                return false;
+            }, { passive: false, capture: true });
+        });
+        
+        // 2. BLOQUEAR PULL-TO-REFRESH
+        document.removeEventListener('touchstart', this.touchStartHandler);
+        document.removeEventListener('touchmove', this.touchMoveHandler);
+        
+        this.touchStartHandler = (e) => {
+            touchStartY = e.touches[0].clientY;
+        };
+        
+        this.touchMoveHandler = (e) => {
+            const touchY = e.touches[0].clientY;
+            const deltaY = touchY - touchStartY;
+            const content = document.getElementById('content');
+            const isAtTop = content ? content.scrollTop <= 0 : window.scrollY <= 0;
+            
+            if (isAtTop && deltaY > 0 && deltaY > 30) {
+                e.preventDefault();
+                e.stopPropagation();
+                consecutiveRefreshAttempts++;
+                showBlockedGesture(`Pull-to-refresh bloqueado (${consecutiveRefreshAttempts})`);
+                return false;
+            }
+        };
+        
+        document.addEventListener('touchstart', this.touchStartHandler, { passive: false });
+        document.addEventListener('touchmove', this.touchMoveHandler, { passive: false });
+        
+        // 3. BLOQUEAR GESTOS DE ZOOM
+        ['gesturestart', 'gesturechange', 'gestureend'].forEach(eventType => {
+            document.addEventListener(eventType, (e) => {
+                e.preventDefault();
+                if (eventType === 'gesturestart') {
+                    showBlockedGesture('Zoom bloqueado');
+                }
+            }, { passive: false });
+        });
+        
+        // 4. BLOQUEAR DOBLE TAP ZOOM
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', (e) => {
+            const now = Date.now();
+            if (now - lastTouchEnd <= 300) {
+                e.preventDefault();
+                showBlockedGesture('Doble tap zoom bloqueado');
+            }
+            lastTouchEnd = now;
+        }, { passive: false });
+        
+        console.log('✅ Bloqueos de gestos aplicados correctamente');
+    }
 }
 
 // Sistema de acceso administrativo seguro
@@ -1443,11 +1572,133 @@ function handleHeaderScroll() {
     isScrolling = true;
 }
 
-// Inicializar scroll listener cuando cargue la página - COMBINAR CON EL EXISTENTE
+// REGISTRO DEL SERVICE WORKER - CÓDIGO NUEVO
+
+// Función para registrar Service Worker
+async function registerServiceWorker() {
+    if ('serviceWorker' in navigator) {
+        try {
+            console.log('🔄 Registrando Service Worker...');
+            
+            const registration = await navigator.serviceWorker.register('/service-worker.js', {
+                scope: '/'
+            });
+            
+            console.log('✅ Service Worker registrado:', registration.scope);
+            
+            // Escuchar actualizaciones
+            registration.addEventListener('updatefound', () => {
+                console.log('🔄 Nueva versión del Service Worker disponible');
+                const newWorker = registration.installing;
+                
+                newWorker.addEventListener('statechange', () => {
+                    if (newWorker.state === 'installed') {
+                        if (navigator.serviceWorker.controller) {
+                            // Hay una nueva versión
+                            showUpdateAvailable();
+                        }
+                    }
+                });
+            });
+            
+            // Escuchar cuando el SW toma control
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                console.log('🔄 Service Worker tomó control - recargando...');
+                window.location.reload();
+            });
+            
+            // Configurar limpieza automática de cache
+            setInterval(() => {
+                if (navigator.serviceWorker.controller) {
+                    navigator.serviceWorker.controller.postMessage({
+                        type: 'CLEAN_CACHE'
+                    });
+                }
+            }, 24 * 60 * 60 * 1000); // Cada 24 horas
+            
+        } catch (error) {
+            console.error('❌ Error registrando Service Worker:', error);
+        }
+    } else {
+        console.warn('⚠️ Service Workers no soportados en este navegador');
+    }
+}
+
+// Función para mostrar notificación de actualización disponible
+function showUpdateAvailable() {
+    const updateNotification = document.createElement('div');
+    updateNotification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #17a2b8;
+        color: white;
+        padding: 15px 20px;
+        border-radius: 8px;
+        z-index: 10000;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+    `;
+    updateNotification.innerHTML = `
+        🔄 Nueva versión disponible<br>
+        <small>Toque para actualizar</small>
+    `;
+    
+    updateNotification.onclick = () => {
+        window.location.reload();
+    };
+    
+    document.body.appendChild(updateNotification);
+    
+    setTimeout(() => {
+        if (updateNotification.parentNode) {
+            updateNotification.remove();
+        }
+    }, 10000);
+}
+
+// Verificar estado del Service Worker
+async function checkServiceWorkerStatus() {
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        try {
+            const channel = new MessageChannel();
+            
+            channel.port1.onmessage = (event) => {
+                if (event.data.type === 'STATUS_RESPONSE') {
+                    console.log('📊 Service Worker status:', event.data);
+                    
+                    if (!event.data.online && event.data.cacheReady) {
+                        catalog.updateStatus('offline', '📱 Funcionando sin conexión');
+                    }
+                }
+            };
+            
+            navigator.serviceWorker.controller.postMessage({
+                type: 'GET_STATUS'
+            }, [channel.port2]);
+            
+        } catch (error) {
+            console.error('Error checking SW status:', error);
+        }
+    }
+}
+
+// INICIALIZACIÓN PRINCIPAL - MODIFICADA
 document.addEventListener('DOMContentLoaded', function() {
+    // Registrar Service Worker PRIMERO
+    registerServiceWorker();
+    
+    // Inicializar catálogo
     catalog = new ProductCatalog();
+    
+    // Configurar scroll listener para header
     const content = document.getElementById('content');
     if (content) {
         content.addEventListener('scroll', handleHeaderScroll, { passive: true });
     }
+    
+    // Verificar estado del SW después de un momento
+    setTimeout(checkServiceWorkerStatus, 2000);
 });
