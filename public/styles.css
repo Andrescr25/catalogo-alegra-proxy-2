@@ -1460,27 +1460,90 @@ body:has(.header.hidden) .container {
     }
 }
 
-/* BLOQUEO TOTAL DE MENÚS CONTEXTUALES EN IMÁGENES */
-img {
+/* BLOQUEO SÚPER AGRESIVO DE MENÚS CONTEXTUALES EN IMÁGENES */
+
+/* Bloqueo global para todos los elementos de imagen */
+img, 
+.product-image, 
+.company-logo,
+.product-image-container,
+.product-image-placeholder {
     -webkit-touch-callout: none !important;
-    -webkit-user-select: none !important;
-    -webkit-user-drag: none !important;
+    -khtml-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
     user-select: none !important;
+    
+    -webkit-user-drag: none !important;
+    -khtml-user-drag: none !important;
+    -moz-user-drag: none !important;
+    -o-user-drag: none !important;
+    
+    touch-action: manipulation !important;
+    -webkit-tap-highlight-color: transparent !important;
+    
+    /* Prevenir eventos contextuales */
     pointer-events: auto !important;
-    touch-action: manipulation !important;
 }
 
-.product-image, .company-logo {
+/* Específico para contenedores de productos */
+.product-card,
+.product-card *,
+.product-image-container,
+.product-image-container * {
     -webkit-touch-callout: none !important;
-    -webkit-user-select: none !important;
-    -webkit-user-drag: none !important;
     user-select: none !important;
-    touch-action: manipulation !important;
+    -webkit-tap-highlight-color: transparent !important;
 }
 
-.product-image-container, .product-card {
+/* Bloqueo para pseudo elementos */
+img::before,
+img::after,
+.product-image::before,
+.product-image::after {
     -webkit-touch-callout: none !important;
-    -webkit-user-select: none !important;
     user-select: none !important;
-    touch-action: manipulation !important;
+}
+
+/* Específico para navegadores webkit (Safari, Chrome) */
+@supports (-webkit-touch-callout: none) {
+    img, .product-image, .company-logo {
+        -webkit-touch-callout: none !important;
+        -webkit-user-drag: none !important;
+        -webkit-tap-highlight-color: transparent !important;
+    }
+    
+    .product-image-container {
+        touch-action: manipulation !important;
+        -webkit-touch-callout: none !important;
+    }
+}
+
+/* Bloqueo adicional para elementos padre */
+.products-grid,
+.category-section {
+    -webkit-touch-callout: none !important;
+    user-select: none !important;
+}
+
+/* Prevenir selección en cualquier cosa dentro de product-card */
+.product-card * {
+    -webkit-touch-callout: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
+    user-select: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+}
+
+/* Permitir selección ÚNICAMENTE en campos de texto */
+input[type="text"], 
+input[type="search"], 
+textarea,
+.main-search,
+.search-admin,
+.modal-search {
+    -moz-user-select: text !important;
+    -ms-user-select: text !important;
+    user-select: text !important;
+    -webkit-touch-callout: default !important;
 }
