@@ -258,37 +258,22 @@
     </div>
     
     <script>
-        // SISTEMA ANTI-TONTO PARA TABLETS - Solo dispositivos móviles
+        // SISTEMA ANTI-TONTO PARA TABLETS - Solo dispositivos móviles (MODO SILENCIOSO)
         if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
             
             let touchStartY = 0;
-            let blockedGestures = 0;
             let consecutiveRefreshAttempts = 0;
             
-            function showBlockedGesture(message) {
-                blockedGestures++;
-                const indicator = document.getElementById('gestureIndicator');
-                indicator.textContent = `🚫 ${message}`;
-                indicator.classList.add('show');
-                
-                setTimeout(() => {
-                    indicator.classList.remove('show');
-                }, 2000);
-                
-                console.log(`Gesto bloqueado: ${message} (Total: ${blockedGestures})`);
-            }
-            
-            // 1. BLOQUEAR MENÚ CONTEXTUAL (CRÍTICO PARA TABLETS)
+            // 1. BLOQUEAR MENÚ CONTEXTUAL (CRÍTICO PARA TABLETS) - SIN MENSAJES
             ['contextmenu', 'selectstart', 'dragstart'].forEach(event => {
                 document.addEventListener(event, (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    showBlockedGesture('Menú contextual bloqueado');
                     return false;
                 }, { passive: false, capture: true });
             });
             
-            // 2. BLOQUEAR PULL-TO-REFRESH
+            // 2. BLOQUEAR PULL-TO-REFRESH - SIN MENSAJES
             document.addEventListener('touchstart', (e) => {
                 touchStartY = e.touches[0].clientY;
             }, { passive: false });
@@ -303,10 +288,9 @@
                     e.preventDefault();
                     e.stopPropagation();
                     consecutiveRefreshAttempts++;
-                    showBlockedGesture(`Pull-to-refresh bloqueado (${consecutiveRefreshAttempts})`);
                     
                     // Si insiste mucho, mostrar advertencia
-                    if (consecutiveRefreshAttempts > 5) {
+                    if (consecutiveRefreshAttempts > 10) {
                         showPersistentWarning();
                         consecutiveRefreshAttempts = 0;
                     }
@@ -314,10 +298,9 @@
                 }
             }, { passive: false });
             
-            // 3. BLOQUEAR GESTOS DE ZOOM
+            // 3. BLOQUEAR GESTOS DE ZOOM - SIN MENSAJES
             document.addEventListener('gesturestart', (e) => {
                 e.preventDefault();
-                showBlockedGesture('Zoom bloqueado');
             }, { passive: false });
             
             document.addEventListener('gesturechange', (e) => {
@@ -328,25 +311,23 @@
                 e.preventDefault();
             }, { passive: false });
             
-            // 4. BLOQUEAR DOBLE TAP ZOOM
+            // 4. BLOQUEAR DOBLE TAP ZOOM - SIN MENSAJES
             let lastTouchEnd = 0;
             document.addEventListener('touchend', (e) => {
                 const now = Date.now();
                 if (now - lastTouchEnd <= 300) {
                     e.preventDefault();
-                    showBlockedGesture('Doble tap zoom bloqueado');
                 }
                 lastTouchEnd = now;
             }, { passive: false });
             
-            // 5. BLOQUEAR PRESIÓN LARGA
+            // 5. BLOQUEAR PRESIÓN LARGA - SIN MENSAJES
             let touchTimer;
             document.addEventListener('touchstart', (e) => {
                 if (e.target.matches('input, textarea, button')) return; // Permitir en elementos interactivos
                 
                 touchTimer = setTimeout(() => {
                     e.preventDefault();
-                    showBlockedGesture('Presión larga bloqueada');
                 }, 500);
             }, { passive: false });
             
@@ -354,7 +335,7 @@
                 clearTimeout(touchTimer);
             }, { passive: true });
             
-            // 6. MOSTRAR ADVERTENCIA PERSISTENTE
+            // 6. MOSTRAR ADVERTENCIA PERSISTENTE (SOLO SI INSISTE MUCHO)
             function showPersistentWarning() {
                 const warning = document.createElement('div');
                 warning.style.cssText = `
@@ -393,9 +374,9 @@
             // 7. RESETEAR INTENTOS DESPUÉS DE INACTIVIDAD
             setInterval(() => {
                 consecutiveRefreshAttempts = Math.max(0, consecutiveRefreshAttempts - 1);
-            }, 3000);
+            }, 5000);
             
-            console.log('🛡️ Sistema anti-tonto para tablets activado');
+            console.log('🛡️ Sistema anti-tonto activado (modo silencioso)');
         }
         
         // FUNCIÓN DOBLE TOQUE LOGO - IR AL INICIO
