@@ -1196,9 +1196,9 @@ class ProductCatalog {
         }, 3000);
     }
 
-    // NUEVO MÉTODO: Aplicar bloqueos de gestos
+    // NUEVO MÉTODO: Aplicar bloqueos de gestos - ENFOQUE NUCLEAR
     applyGestureBlocks() {
-        console.log('🛡️ Aplicando bloqueos de gestos...');
+        console.log('🛡️ Aplicando bloqueos de gestos NUCLEAR...');
         
         // Solo aplicar en dispositivos móviles
         if (!/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
@@ -1209,6 +1209,7 @@ class ProductCatalog {
         let touchStartY = 0;
         let blockedGestures = 0;
         let consecutiveRefreshAttempts = 0;
+        let activeTouchEvents = new Set();
         
         const showBlockedGesture = (message) => {
             blockedGestures++;
@@ -1224,18 +1225,210 @@ class ProductCatalog {
             console.log(`Gesto bloqueado: ${message} (Total: ${blockedGestures})`);
         };
         
-        // 1. BLOQUEAR MENÚ CONTEXTUAL (CRÍTICO)
-        ['contextmenu', 'selectstart', 'dragstart'].forEach(eventType => {
-            document.removeEventListener(eventType, this.gestureBlockHandler); // Remover existente
-            document.addEventListener(eventType, (e) => {
+        // FUNCIÓN NUCLEAR: Detectar si es imagen o relacionado
+        const isImageRelated = (element) => {
+            if (!element) return false;
+            
+            return element.tagName === 'IMG' || 
+                   element.classList.contains('product-image') ||
+                   element.classList.contains('company-logo') ||
+                   element.classList.contains('product-image-container') ||
+                   element.classList.contains('product-image-placeholder') ||
+                   element.closest('.product-image-container') !== null ||
+                   element.closest('.product-card') !== null ||
+                   element.closest('.logo-section') !== null;
+        };
+        
+        // 1. BLOQUEO NUCLEAR DE EVENTOS CONTEXTUALES
+        const nuclearBlocker = (e) => {
+            if (isImageRelated(e.target)) {
                 e.preventDefault();
                 e.stopPropagation();
-                showBlockedGesture('Menú contextual bloqueado');
+                e.stopImmediatePropagation();
+                showBlockedGesture('Evento de imagen BLOQUEADO');
                 return false;
-            }, { passive: false, capture: true });
+            }
+        };
+        
+        // Remover TODOS los listeners anteriores
+        ['contextmenu', 'selectstart', 'dragstart', 'drag', 'dragend', 'copy'].forEach(eventType => {
+            document.removeEventListener(eventType, nuclearBlocker, true);
+            document.removeEventListener(eventType, nuclearBlocker, false);
         });
         
-        // 2. BLOQUEAR PULL-TO-REFRESH
+        // Aplicar bloqueo con MÁXIMA prioridad
+        ['contextmenu', 'selectstart', 'dragstart', 'drag', 'dragend', 'copy'].forEach(eventType => {
+            document.addEventListener(eventType, nuclearBlocker, { 
+                passive: false, 
+                capture: true 
+            });
+            document.addEventListener(eventType, nuclearBlocker, { 
+                passive: false, 
+                capture: false 
+            });
+        });
+        
+        // 2. BLOQUEO NUCLEAR DE TOUCH EVENTS
+        let touchTimers = new Map();
+        let preventNextClick = false;
+        
+        const nuclearTouchStart = (e) => {
+            // Procesar cada touch
+            for (let i = 0; i < e.touches.length; i++) {
+                const touch = e.touches[i];
+                const element = document.elementFromPoint(touch.clientX, touch.clientY);
+                
+                if (isImageRelated(element)) {
+                    const touchId = touch.identifier;
+                    activeTouchEvents.add(touchId);
+                    
+                    // Timer súper agresivo (200ms)
+                    const timer = setTimeout(() => {
+                        console.log('🚫 BLOQUEANDO long press en imagen');
+                        e.preventDefault();
+                        e.stopPropagation();
+                        e.stopImmediatePropagation();
+                        showBlockedGesture('Long press NUCLEAR bloqueado');
+                        preventNextClick = true;
+                        
+                        // Forzar que se suelte el touch
+                        element.style.transform = 'scale(0.95)';
+                        setTimeout(() => {
+                            element.style.transform = '';
+                        }, 100);
+                        
+                    }, 200); // MUY agresivo - 200ms
+                    
+                    touchTimers.set(touchId, timer);
+                }
+            }
+        };
+        
+        const nuclearTouchEnd = (e) => {
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                const touch = e.changedTouches[i];
+                const touchId = touch.identifier;
+                
+                if (touchTimers.has(touchId)) {
+                    clearTimeout(touchTimers.get(touchId));
+                    touchTimers.delete(touchId);
+                }
+                
+                if (activeTouchEvents.has(touchId)) {
+                    const element = document.elementFromPoint(touch.clientX, touch.clientY);
+                    if (isImageRelated(element)) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        e.stopImmediatePropagation();
+                    }
+                    activeTouchEvents.delete(touchId);
+                }
+            }
+            
+            // Reset preventNextClick después de un momento
+            setTimeout(() => {
+                preventNextClick = false;
+            }, 500);
+        };
+        
+        const nuclearTouchMove = (e) => {
+            // Cancelar TODOS los timers en cualquier movimiento
+            touchTimers.forEach((timer) => clearTimeout(timer));
+            touchTimers.clear();
+        };
+        
+        const nuclearTouchCancel = (e) => {
+            touchTimers.forEach((timer) => clearTimeout(timer));
+            touchTimers.clear();
+            activeTouchEvents.clear();
+        };
+        
+        // Limpiar listeners anteriores
+        ['touchstart', 'touchend', 'touchmove', 'touchcancel'].forEach(eventType => {
+            document.removeEventListener(eventType, nuclearTouchStart);
+            document.removeEventListener(eventType, nuclearTouchEnd);
+            document.removeEventListener(eventType, nuclearTouchMove);
+            document.removeEventListener(eventType, nuclearTouchCancel);
+        });
+        
+        // Aplicar nuevos listeners
+        document.addEventListener('touchstart', nuclearTouchStart, { passive: false, capture: true });
+        document.addEventListener('touchend', nuclearTouchEnd, { passive: false, capture: true });
+        document.addEventListener('touchmove', nuclearTouchMove, { passive: false, capture: true });
+        document.addEventListener('touchcancel', nuclearTouchCancel, { passive: false, capture: true });
+        
+        // 3. BLOQUEO DE CLICKS PREVENIR DOBLE ACCIÓN
+        const nuclearClickBlock = (e) => {
+            if (preventNextClick && isImageRelated(e.target)) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                showBlockedGesture('Click post-longpress bloqueado');
+                return false;
+            }
+        };
+        
+        document.addEventListener('click', nuclearClickBlock, { passive: false, capture: true });
+        
+        // 4. REEMPLAZAR TODAS LAS IMÁGENES CON VERSIONES SÚPER PROTEGIDAS
+        const nuclearImageProtection = () => {
+            const allImages = document.querySelectorAll('img');
+            allImages.forEach((img, index) => {
+                // Aplicar estilos directamente
+                img.style.webkitTouchCallout = 'none';
+                img.style.webkitUserSelect = 'none';
+                img.style.webkitUserDrag = 'none';
+                img.style.userSelect = 'none';
+                img.style.touchAction = 'manipulation';
+                img.style.pointerEvents = 'auto';
+                img.draggable = false;
+                
+                // Remover atributos problemáticos
+                img.removeAttribute('oncontextmenu');
+                img.removeAttribute('ondragstart');
+                img.removeAttribute('onselectstart');
+                
+                // Evento directo en cada imagen
+                const imageBlocker = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    console.log(`🚫 Imagen ${index} bloqueada:`, e.type);
+                    return false;
+                };
+                
+                ['contextmenu', 'dragstart', 'selectstart', 'copy', 'cut'].forEach(eventType => {
+                    img.removeEventListener(eventType, imageBlocker);
+                    img.addEventListener(eventType, imageBlocker, { passive: false, capture: true });
+                });
+                
+                // Marcar como protegida
+                img.setAttribute('data-protected', 'true');
+            });
+        };
+        
+        // Aplicar protección inmediatamente
+        nuclearImageProtection();
+        
+        // Reaplícar cuando se agreguen nuevas imágenes
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                mutation.addedNodes.forEach((node) => {
+                    if (node.nodeType === 1) { // Element node
+                        if (node.tagName === 'IMG' || node.querySelector('img')) {
+                            setTimeout(nuclearImageProtection, 100);
+                        }
+                    }
+                });
+            });
+        });
+        
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+        
+        // 5. BLOQUEAR PULL-TO-REFRESH (mantener código anterior)
         document.removeEventListener('touchstart', this.touchStartHandler);
         document.removeEventListener('touchmove', this.touchMoveHandler);
         
@@ -1261,7 +1454,7 @@ class ProductCatalog {
         document.addEventListener('touchstart', this.touchStartHandler, { passive: false });
         document.addEventListener('touchmove', this.touchMoveHandler, { passive: false });
         
-        // 3. BLOQUEAR GESTOS DE ZOOM
+        // 6. BLOQUEAR GESTOS DE ZOOM (mantener código anterior)
         ['gesturestart', 'gesturechange', 'gestureend'].forEach(eventType => {
             document.addEventListener(eventType, (e) => {
                 e.preventDefault();
@@ -1271,7 +1464,7 @@ class ProductCatalog {
             }, { passive: false });
         });
         
-        // 4. BLOQUEAR DOBLE TAP ZOOM
+        // 7. BLOQUEAR DOBLE TAP ZOOM (mantener código anterior)
         let lastTouchEnd = 0;
         document.addEventListener('touchend', (e) => {
             const now = Date.now();
@@ -1282,206 +1475,7 @@ class ProductCatalog {
             lastTouchEnd = now;
         }, { passive: false });
         
-        // 5. BLOQUEO AGRESIVO PARA IMÁGENES - ENFOQUE MÚLTIPLE
-        const isImageOrImageContainer = (element) => {
-            return element.tagName === 'IMG' || 
-                   element.classList.contains('product-image') ||
-                   element.classList.contains('company-logo') ||
-                   element.classList.contains('product-image-container') ||
-                   element.closest('.product-image-container') !== null ||
-                   element.closest('.product-card') !== null;
-        };
-
-        // Bloqueo de contexto menu MÁS AGRESIVO
-        const aggressiveContextBlock = (e) => {
-            if (isImageOrImageContainer(e.target)) {
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                showBlockedGesture('Menú de imagen bloqueado');
-                return false;
-            }
-        };
-
-        // Remover listeners anteriores si existen
-        document.removeEventListener('contextmenu', aggressiveContextBlock, true);
-        document.removeEventListener('selectstart', aggressiveContextBlock, true);
-        document.removeEventListener('dragstart', aggressiveContextBlock, true);
-
-        // Aplicar bloqueo contextual con máxima prioridad
-        document.addEventListener('contextmenu', aggressiveContextBlock, { 
-            passive: false, 
-            capture: true 
-        });
-        document.addEventListener('selectstart', aggressiveContextBlock, { 
-            passive: false, 
-            capture: true 
-        });
-        document.addEventListener('dragstart', aggressiveContextBlock, { 
-            passive: false, 
-            capture: true 
-        });
-
-        // 6. BLOQUEO DE LONG PRESS MÁS AGRESIVO
-        let longPressTimers = new Map();
-        let activeTouches = new Map();
-
-        const handleAggressiveTouchStart = (e) => {
-            // Verificar cada touch point
-            for (let i = 0; i < e.touches.length; i++) {
-                const touch = e.touches[i];
-                const target = document.elementFromPoint(touch.clientX, touch.clientY);
-                
-                if (isImageOrImageContainer(target)) {
-                    const touchId = touch.identifier;
-                    
-                    // Cancelar timer anterior si existe
-                    if (longPressTimers.has(touchId)) {
-                        clearTimeout(longPressTimers.get(touchId));
-                    }
-                    
-                    // Configurar nuevo timer
-                    const timer = setTimeout(() => {
-                        e.preventDefault();
-                        e.stopImmediatePropagation();
-                        showBlockedGesture('Presión larga en imagen bloqueada');
-                        activeTouches.set(touchId, true);
-                    }, 300); // Reducido a 300ms para ser más agresivo
-                    
-                    longPressTimers.set(touchId, timer);
-                }
-            }
-        };
-
-        const handleAggressiveTouchEnd = (e) => {
-            // Limpiar timers y estados para los touches que terminaron
-            for (let i = 0; i < e.changedTouches.length; i++) {
-                const touch = e.changedTouches[i];
-                const touchId = touch.identifier;
-                
-                if (longPressTimers.has(touchId)) {
-                    clearTimeout(longPressTimers.get(touchId));
-                    longPressTimers.delete(touchId);
-                }
-                
-                if (activeTouches.has(touchId)) {
-                    const target = document.elementFromPoint(touch.clientX, touch.clientY);
-                    if (isImageOrImageContainer(target)) {
-                        e.preventDefault();
-                        e.stopImmediatePropagation();
-                    }
-                    activeTouches.delete(touchId);
-                }
-            }
-        };
-
-        const handleAggressiveTouchMove = (e) => {
-            // Cancelar todos los timers activos si hay movimiento
-            longPressTimers.forEach((timer, touchId) => {
-                clearTimeout(timer);
-                longPressTimers.delete(touchId);
-            });
-        };
-
-        // Remover listeners anteriores
-        document.removeEventListener('touchstart', handleAggressiveTouchStart);
-        document.removeEventListener('touchend', handleAggressiveTouchEnd);
-        document.removeEventListener('touchmove', handleAggressiveTouchMove);
-
-        // Aplicar nuevos listeners
-        document.addEventListener('touchstart', handleAggressiveTouchStart, { 
-            passive: false, 
-            capture: true 
-        });
-        document.addEventListener('touchend', handleAggressiveTouchEnd, { 
-            passive: false, 
-            capture: true 
-        });
-        document.addEventListener('touchmove', handleAggressiveTouchMove, { 
-            passive: false, 
-            capture: true 
-        });
-
-        // 7. APLICAR ESTILOS DINÁMICAMENTE A TODAS LAS IMÁGENES
-        const applyImageStyles = () => {
-            const allImages = document.querySelectorAll('img, .product-image, .company-logo');
-            allImages.forEach(img => {
-                img.style.webkitTouchCallout = 'none';
-                img.style.webkitUserSelect = 'none';
-                img.style.webkitUserDrag = 'none';
-                img.style.userSelect = 'none';
-                img.style.touchAction = 'manipulation';
-                img.style.pointerEvents = 'auto';
-                img.draggable = false;
-                
-                // Remover atributos que puedan interferir
-                img.removeAttribute('oncontextmenu');
-                img.removeAttribute('ondragstart');
-                
-                // Agregar event listeners directamente al elemento
-                img.addEventListener('contextmenu', (e) => {
-                    e.preventDefault();
-                    e.stopImmediatePropagation();
-                    return false;
-                }, { passive: false, capture: true });
-                
-                img.addEventListener('dragstart', (e) => {
-                    e.preventDefault();
-                    e.stopImmediatePropagation();
-                    return false;
-                }, { passive: false, capture: true });
-                
-                img.addEventListener('selectstart', (e) => {
-                    e.preventDefault();
-                    e.stopImmediatePropagation();
-                    return false;
-                }, { passive: false, capture: true });
-            });
-        };
-
-        // Aplicar estilos inmediatamente
-        applyImageStyles();
-
-        // Reaplícar estilos cuando se agreguen nuevas imágenes
-        const observer = new MutationObserver(() => {
-            applyImageStyles();
-        });
-
-        observer.observe(document.body, {
-            childList: true,
-            subtree: true
-        });
-
-        // 8. CONFIGURACIÓN EXTREMA PARA iOS/SAFARI
-        if (/iPhone|iPad|iPod|Safari/i.test(navigator.userAgent)) {
-            // Aplicar estilos webkit específicos
-            const styleSheet = document.createElement('style');
-            styleSheet.textContent = `
-                img, .product-image, .company-logo {
-                    -webkit-touch-callout: none !important;
-                    -webkit-user-select: none !important;
-                    -webkit-user-drag: none !important;
-                    -webkit-tap-highlight-color: transparent !important;
-                }
-                
-                .product-card *, .product-image-container * {
-                    -webkit-touch-callout: none !important;
-                    -webkit-user-select: none !important;
-                    -webkit-tap-highlight-color: transparent !important;
-                }
-            `;
-            document.head.appendChild(styleSheet);
-            
-            // Event listener específico para iOS
-            document.addEventListener('gesturestart', (e) => {
-                if (isImageOrImageContainer(e.target)) {
-                    e.preventDefault();
-                    e.stopImmediatePropagation();
-                    return false;
-                }
-            }, { passive: false, capture: true });
-        }
-
-        console.log('🚫 Bloqueos de imágenes aplicados correctamente');
+        console.log('🚫💥 Bloqueos NUCLEARES aplicados correctamente');
         console.log('✅ Bloqueos de gestos aplicados correctamente');
     }
 }
