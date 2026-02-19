@@ -77,6 +77,7 @@ export async function startBackgroundSync(force = false) {
                     // No break aquí para procesar los otros del lote que quizás sí trajeron algo (raro pero posible)
                 }
 
+                const activeBatch = batch.filter(p => p.status === 'active');
                 if (activeBatch.length > 0) {
                     await dbData.saveProducts(activeBatch);
                     newBuffer.push(...activeBatch);
