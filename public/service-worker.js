@@ -77,6 +77,17 @@ self.addEventListener('fetch', (event) => {
         return;
     }
     
+    // Estrategia Robust para Navegación (SPA)
+    if (request.mode === 'navigate') {
+        event.respondWith(
+            fetch(request)
+                .catch(() => {
+                    return caches.match('/index.html');
+                })
+        );
+        return;
+    }
+
     // Estrategia para archivos estáticos: Cache First
     if (isStaticAsset(url)) {
         event.respondWith(cacheFirst(request));
