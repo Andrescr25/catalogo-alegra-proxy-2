@@ -21,6 +21,8 @@ const API_PATTERNS = [
     '/api/productos'
 ];
 
+const CACHE_NAME = 'catalogo-v1.7';
+
 // Instalación del Service Worker
 self.addEventListener('install', (event) => {
     console.log('📦 Service Worker: Instalando...');

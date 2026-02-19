@@ -20,16 +20,19 @@ async function initApp() {
             const lastUpdate = await dbData.getLastUpdate();
             console.log('📦 Datos locales cargados. Última actualización:', lastUpdate);
         } else {
-            console.log('📦 Sin datos locales. Iniciando sync...');
-            if (!navigator.onLine) {
+            console.log('📦 Sin datos locales. Iniciando sync inicial...');
+            if (navigator.onLine) {
+                // PRIMERA CARGA: Si no hay datos, sí o sí debemos descargar
+                startBackgroundSync();
+            } else {
                 renderer.showError('No hay datos descargados y no tienes conexión a internet. Conéctate para la primera sincronización.');
             }
         }
 
         /* 
-        // Deshabilitado por petición del usuario: Solo sync manual
+        // Deshabilitado por petición del usuario: Solo sync manual en re-loads
         if (navigator.onLine) {
-            startBackgroundSync();
+            // startBackgroundSync(); <--- Esto se quita para que no sync cada vez que abres
         } 
         */
         
