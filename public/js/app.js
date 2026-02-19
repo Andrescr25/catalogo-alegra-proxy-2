@@ -52,31 +52,30 @@ function setupEventListeners() {
 }
 
 // Exponer funciones globales para el HTML (onclick handlers)
-window.refreshProducts = () => admin.forceUpdate();
-window.toggleAdminPanel = () => admin.toggleAdmin();
-window.performMainSearch = (val) => admin.performSearch(val);
-window.clearMainSearch = () => {
-    document.getElementById('mainSearch').value = '';
-    admin.performSearch('');
-};
-
-
+// Asignación explícita al objeto window
 window.resetHiddenProducts = () => admin.resetHidden();
 window.forceUpdateCatalog = () => admin.forceUpdate();
 window.openProductModal = () => admin.openProductModal();
-
+window.performMainSearch = (val) => admin.performSearch(val);
+window.clearMainSearch = () => {
+    const input = document.getElementById('mainSearch');
+    if(input) input.value = '';
+    admin.performSearch('');
+};
 window.toggleAdminAccess = () => {
     // Lógica simple de 3 clicks
     if (!window.clickCount) window.clickCount = 0;
     window.clickCount++;
     setTimeout(() => window.clickCount = 0, 1000);
     if (window.clickCount >= 3) {
-        document.getElementById('hiddenControls').style.display = 'flex';
-        // Mostrar también el botón de forzar actualización si estaba oculto
+        const controls = document.getElementById('hiddenControls');
+        if(controls) controls.style.display = 'flex';
+        
         const refreshBtn = document.getElementById('refreshBtn');
         if(refreshBtn) refreshBtn.style.display = 'block';
     }
 };
+window.toggleAdminPanel = () => admin.toggleAdmin();
 
 // Arrancar
 initApp();

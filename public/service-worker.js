@@ -104,56 +104,41 @@ function isAPIRequest(url) {
 // Estrategia Cache First (para archivos estáticos)
 async function cacheFirst(request) {
     try {
-        // Intentar obtener desde cache primero
         const cachedResponse = await caches.match(request);
         if (cachedResponse) {
-            console.log('📦 Cache hit:', request.url);
             return cachedResponse;
         }
-        
-        // Si no está en cache, buscar en red
-        console.log('🌐 Cache miss, fetching:', request.url);
 
-        // MANEJO DE IMÁGENES CORS (CDN Alegra)
-        // Usamos no-cors para evitar errores, aunque sea opaco
-        let fetchOptions = {};
+        // Manejo especial para imágenes de CDN (Alegra)
         if (request.destination === 'image' && request.url.includes('cdn3.alegra.com')) {
-             fetchOptions = { mode: 'no-cors' };
+            try {
+                // Usar mode: 'no-cors' para imágenes opacas
+                const fetchOptions = {
+                    mode: 'no-cors',
+                    credentials: 'omit'
+                };
+                const networkResponse = await fetch(request.url, fetchOptions);
+                if (networkResponse) {
+                    const cache = await caches.open(CACHE_NAME);
+                    cache.put(request, networkResponse.clone());
+                    return networkResponse;
+                }
+            } catch (e) {
+                console.warn('Fallo imagen CDN:', request.url);
+                return new Response('<svg>...</svg>', { headers: { 'Content-Type': 'image/svg+xml' }});
+            }
         }
 
-        // Clonar request con opciones si es necesario no es directo, 
-        // pero podemos crear nuevo fetch con la URL
-        let networkResponse;
-        
-        if (fetchOptions.mode === 'no-cors') {
-            networkResponse = await fetch(request.url, fetchOptions);
-        } else {
-            networkResponse = await fetch(request);
-        }
-        
-        // Si la respuesta es válida (u opaca para imágenes estáticas), guardarla
-        if (networkResponse.ok || (networkResponse.type === 'opaque')) {
+        const networkResponse = await fetch(request);
+        if (networkResponse.ok) {
             const cache = await caches.open(CACHE_NAME);
             cache.put(request, networkResponse.clone());
         }
-        
         return networkResponse;
-        
-    } catch (error) {
-        console.error('❌ Error en cacheFirst:', error);
-        
-        // Si falla todo, intentar devolver cache aunque sea viejo
-        const cachedResponse = await caches.match(request);
-        if (cachedResponse) {
-            return cachedResponse;
-        }
-        
-        // Retornar fallback para imágenes si falla todo
-        if (request.destination === 'image') {
-             // Podríamos retornar un SVG placeholder
-             return new Response('<svg>...</svg>', { headers: { 'Content-Type': 'image/svg+xml' }});
-        }
 
+    } catch (error) {
+        const cachedResponse = await caches.match(request);
+        if (cachedResponse) return cachedResponse;
         throw error;
     }
 }
