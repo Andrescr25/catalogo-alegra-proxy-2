@@ -61,3 +61,7 @@ export function resetHidden() {
     // document.getElementById('content').scrollTop = currentScroll; 
     updateAdminStats();
 }
+
+export function openProductModal() {
+    alert('Funcionalidad de gestión detallada en desarrollo para versión DB');
+}

@@ -111,22 +111,27 @@ async function cacheFirst(request) {
 
         // Manejo especial para imágenes de CDN (Alegra)
         if (request.destination === 'image' && request.url.includes('cdn3.alegra.com')) {
-            try {
-                // Usar mode: 'no-cors' para imágenes opacas
-                const fetchOptions = {
-                    mode: 'no-cors',
-                    credentials: 'omit'
-                };
-                const networkResponse = await fetch(request.url, fetchOptions);
-                if (networkResponse) {
-                    const cache = await caches.open(CACHE_NAME);
-                    cache.put(request, networkResponse.clone());
-                    return networkResponse;
+            // Si la petición original es 'no-cors' (<img> normal), podemos devolver opaco
+            // Si es 'cors', NO podemos devolver opaco.
+            // Pero las imágenes en HTML son no-cors por defecto.
+            
+            if (request.mode === 'no-cors' || request.mode === 'navigate') { 
+                try {
+                    const fetchOptions = {
+                        mode: 'no-cors',
+                        credentials: 'omit'
+                    };
+                    const networkResponse = await fetch(request.url, fetchOptions);
+                    if (networkResponse) {
+                        const cache = await caches.open(CACHE_NAME);
+                        cache.put(request, networkResponse.clone());
+                        return networkResponse;
+                    }
+                } catch (e) {
+                    console.warn('Fallo imagen CDN (no-cors):', request.url);
                 }
-            } catch (e) {
-                console.warn('Fallo imagen CDN:', request.url);
-                return new Response('<svg>...</svg>', { headers: { 'Content-Type': 'image/svg+xml' }});
             }
+            // Si es cors, intentamos fetch normal, si falla (CORS), devolvemos fallback
         }
 
         const networkResponse = await fetch(request);
@@ -137,6 +142,14 @@ async function cacheFirst(request) {
         return networkResponse;
 
     } catch (error) {
+        // Fallback para imágenes si falla todo (incluyendo CORS)
+        if (request.destination === 'image') {
+             // SVG transparente de 1x1
+             return new Response('<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>', { 
+                 headers: { 'Content-Type': 'image/svg+xml' } 
+             });
+        }
+
         const cachedResponse = await caches.match(request);
         if (cachedResponse) return cachedResponse;
         throw error;
