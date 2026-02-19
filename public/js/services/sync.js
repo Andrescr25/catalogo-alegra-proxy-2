@@ -76,7 +76,6 @@ export async function startBackgroundSync(force = false) {
                     // No break aquí para procesar los otros del lote que quizás sí trajeron algo (raro pero posible)
                 }
 
-                const activeBatch = batch.filter(p => p.status === 'active');
                 if (activeBatch.length > 0) {
                     await dbData.saveProducts(activeBatch);
                     newBuffer.push(...activeBatch);
@@ -85,6 +84,10 @@ export async function startBackgroundSync(force = false) {
 
                 // Actualizar UI
                 updateStatus(`📥 Sincronizados: ${totalSynced} productos...`);
+                
+                // Actualizar Overlay (estimado, ya que no sabemos el total exacto al inicio)
+                // Usamos un logaritmo inverso o simplemente mostramos contador
+                updateSyncUI(`Cargados: ${totalSynced} productos`, Math.min(95, (totalSynced / 500) * 100));
 
                 // Dibujado progresivo inicial
                 if (state.products.length === 0 && newBuffer.length >= 50) {
@@ -133,10 +136,26 @@ export async function startBackgroundSync(force = false) {
         updateStatus(`✅ Sincronizado (${allProducts.length})`);
         showBanner('Sincronización completada', 'success');
 
-    } catch (error) {
-        console.error('Sync Error:', error);
         updateStatus('⚠️ Offline / Error');
     } finally {
         state.isSyncing = false;
+        // Ocultar overlay
+        const overlay = document.getElementById('syncOverlay');
+        if (overlay) overlay.style.display = 'none';
+    }
+}
+
+function updateSyncUI(message, percentage) {
+    const overlay = document.getElementById('syncOverlay');
+    const msgEl = document.getElementById('syncMessage');
+    const fillEl = document.getElementById('syncProgressFill');
+    
+    if (overlay && overlay.style.display === 'none') {
+        overlay.style.display = 'flex';
+    }
+    
+    if (msgEl) msgEl.textContent = message;
+    if (fillEl && percentage !== undefined) {
+        fillEl.style.width = `${percentage}%`;
     }
 }

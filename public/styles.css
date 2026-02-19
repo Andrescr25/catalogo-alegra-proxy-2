@@ -1593,3 +1593,58 @@ textarea,
     user-select: text !important;
     -webkit-touch-callout: default !important;
 }
+
+/* Overlay de sincronización */
+.sync-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(44, 62, 80, 0.95);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    color: white;
+    backdrop-filter: blur(5px);
+}
+
+.sync-content {
+    text-align: center;
+    padding: 30px;
+    background: white;
+    border-radius: 16px;
+    color: #333;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+}
+
+.sync-content h3 {
+    margin: 15px 0 10px;
+    color: #2c3e50;
+}
+
+.sync-content p {
+    color: #666;
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: #f0f0f0;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 15px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #28a745, #20c997);
+    width: 0%;
+    transition: width 0.3s ease;
+}

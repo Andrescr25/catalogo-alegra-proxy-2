@@ -1,12 +1,19 @@
-const CACHE_NAME = 'catalogo-v1.4';
 const STATIC_ASSETS = [
     '/',
     '/index.html', 
     '/styles.css',
-    '/script.js',
-    '/db.js',
+    '/manifest.json',
     '/color2.png',
-    // Agregará automáticamente las fuentes del sistema
+    '/js/app.js',
+    '/js/config.js',
+    '/js/core/db.js',
+    '/js/core/state.js',
+    '/js/features/admin.js',
+    '/js/services/sync.js',
+    '/js/ui/components.js',
+    '/js/ui/render.js',
+    '/js/utils/helpers.js',
+    '/js/utils/security.js'
 ];
 
 // URLs de API que deben funcionar offline
