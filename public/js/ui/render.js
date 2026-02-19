@@ -68,6 +68,17 @@ class Renderer {
             }
         }
     }
+
+    showError(message) {
+        this.clear();
+        this.contentCtx.innerHTML = `
+            <div class="error">
+                <h3>⚠️ Atuación Requerida</h3>
+                <p>${message}</p>
+                <button class="btn btn-primary" onclick="window.location.reload()">Reintentar</button>
+            </div>
+        `;
+    }
 }
 
 export const renderer = new Renderer();

@@ -21,6 +21,9 @@ async function initApp() {
             console.log('📦 Datos locales cargados. Última actualización:', lastUpdate);
         } else {
             console.log('📦 Sin datos locales. Iniciando sync...');
+            if (!navigator.onLine) {
+                renderer.showError('No hay datos descargados y no tienes conexión a internet. Conéctate para la primera sincronización.');
+            }
         }
 
         // Si hay red, sincronizar
