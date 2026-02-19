@@ -4,6 +4,7 @@ const STATIC_ASSETS = [
     '/index.html', 
     '/styles.css',
     '/script.js',
+    '/db.js',
     '/color2.png',
     // Agregará automáticamente las fuentes del sistema
 ];
