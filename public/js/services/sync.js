@@ -28,38 +28,81 @@ export async function startBackgroundSync(force = false) {
             await dbData.clearProducts();
         }
 
+        // Optimización: Fetch en paralelo con ventana deslizante
+        const CONCURRENCY = 5; // Cantidad de peticiones simultáneas
+        let batchIndex = 0;
+        let activeRequests = 0;
+
         while (hasMore) {
-            const response = await fetch(`${config.apiUrl}?start=${start}&limit=${limit}`);
-            if (!response.ok) throw new Error(`API Error ${response.status}`);
-            
-            const data = await response.json();
-            const batch = data.products || (Array.isArray(data) ? data : []);
-            
-            if (batch.length === 0) {
-                hasMore = false;
-                break;
+            // Preparar lote de promesas
+            const promises = [];
+            const starts = [];
+
+            for (let i = 0; i < CONCURRENCY; i++) {
+                if (!hasMore) break;
+                
+                const currentStart = start + (i * limit);
+                starts.push(currentStart);
+                
+                const p = fetch(`${config.apiUrl}?start=${currentStart}&limit=${limit}`)
+                    .then(res => res.ok ? res.json() : Promise.reject(`Status ${res.status}`))
+                    .then(data => ({ start: currentStart, data, ok: true }))
+                    .catch(err => ({ start: currentStart, err, ok: false }));
+                
+                promises.push(p);
             }
 
-            // Filtrar activos si es necesario, o guardar todo y filtrar en memoria
-            const activeBatch = batch.filter(p => p.status === 'active');
+            if (promises.length === 0) break;
 
-            await dbData.saveProducts(activeBatch);
-            newBuffer.push(...activeBatch);
-            totalSynced += activeBatch.length;
+            updateStatus(`📥 Descargando lote ${Math.floor(start/limit) + 1}...`);
             
-            updateStatus(`📥 Descargando... (${totalSynced})`);
+            // Esperar a que el lote completo termine (Promise.all)
+            // Nota: Podríamos hacerlo más sofisticado con un pool dinámico, 
+            // pero por lotes es más seguro para mantener el orden de "hasMore"
+            const results = await Promise.all(promises);
 
-            // Si es la primera carga visual, dibujar algo rápido
-            if (state.products.length === 0 && newBuffer.length > 0) {
-                state.setProducts(newBuffer);
-                renderer.renderInitial();
+            // Procesar resultados en orden
+            for (const result of results) {
+                if (!result.ok) {
+                    console.error(`Error en batch ${result.start}:`, result.err);
+                    continue; 
+                }
+
+                const data = result.data;
+                const batch = data.products || (Array.isArray(data) ? data : []);
+                
+                if (batch.length === 0) {
+                    hasMore = false;
+                    // No break aquí para procesar los otros del lote que quizás sí trajeron algo (raro pero posible)
+                }
+
+                const activeBatch = batch.filter(p => p.status === 'active');
+                if (activeBatch.length > 0) {
+                    await dbData.saveProducts(activeBatch);
+                    newBuffer.push(...activeBatch);
+                    totalSynced += activeBatch.length;
+                }
+
+                // Actualizar UI
+                updateStatus(`📥 Sincronizados: ${totalSynced} productos...`);
+
+                // Dibujado progresivo inicial
+                if (state.products.length === 0 && newBuffer.length >= 50) {
+                    state.setProducts([...newBuffer]); // Copia para no romper ref
+                    renderer.renderInitial();
+                }
+
+                // Chequeo de fin
+                if (batch.length < limit) {
+                    hasMore = false;
+                }
             }
 
-            if (data.debug && !data.debug.has_more) hasMore = false;
-            if (batch.length < limit) hasMore = false;
-
-            start += limit;
-            await new Promise(r => setTimeout(r, 50));
+            // Preparar siguiente ventana
+            start += (promises.length * limit);
+            
+            // Pequeña pausa para dar respiro al UI y red
+            await new Promise(r => setTimeout(r, 100));
         }
 
         await dbData.saveLastUpdate();
