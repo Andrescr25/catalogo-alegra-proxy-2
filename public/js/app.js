@@ -6,6 +6,8 @@ import { applyGestureBlocks } from './utils/security.js';
 import * as admin from './features/admin.js';
 
 // Inicialización Global
+console.log('📜 Cargando app.js...');
+
 async function initApp() {
     console.log('🚀 Iniciando App Modular...');
     
@@ -53,15 +55,27 @@ function setupEventListeners() {
 
 // Exponer funciones globales para el HTML (onclick handlers)
 // Asignación explícita al objeto window
-window.resetHiddenProducts = () => admin.resetHidden();
-window.forceUpdateCatalog = () => admin.forceUpdate();
-window.openProductModal = () => admin.openProductModal();
-window.performMainSearch = (val) => admin.performSearch(val);
-window.clearMainSearch = () => {
-    const input = document.getElementById('mainSearch');
-    if(input) input.value = '';
-    admin.performSearch('');
-};
+// Exponer funciones globales para el HTML (onclick handlers)
+try {
+    console.log('🔗 Asignando funciones globales...');
+    window.resetHiddenProducts = () => admin.resetHidden();
+    window.forceUpdateCatalog = () => admin.forceUpdate();
+    window.openProductModal = () => admin.openProductModal();
+    window.performMainSearch = (val) => admin.performSearch(val);
+    window.clearMainSearch = () => {
+        const input = document.getElementById('mainSearch');
+        if(input) input.value = '';
+        admin.performSearch('');
+    };
+    
+    // Asignar también al objeto globalThis por si acaso
+    globalThis.forceUpdateCatalog = window.forceUpdateCatalog;
+    
+    console.log('✅ Funciones globales asignadas correctamente.');
+    console.log('TEST: forceUpdateCatalog es:', typeof window.forceUpdateCatalog);
+} catch (e) {
+    console.error('❌ Error asignando funciones globales:', e);
+}
 window.toggleAdminAccess = () => {
     // Lógica simple de 3 clicks
     if (!window.clickCount) window.clickCount = 0;
