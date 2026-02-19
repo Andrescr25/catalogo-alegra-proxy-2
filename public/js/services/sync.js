@@ -92,9 +92,22 @@ export async function startBackgroundSync(force = false) {
                     renderer.renderInitial();
                 }
 
-                // Chequeo de fin
-                if (batch.length < limit) {
-                    hasMore = false;
+                // Chequeo de fin ROBUSTO
+                // El server filtra productos inactivos, por lo que un batch puede ser < limit
+                // pero aún haber más datos en Alegra.
+                // Usamos la bandera 'has_more' del servidor si existe.
+                
+                if (data.debug && typeof data.debug.has_more === 'boolean') {
+                    if (!data.debug.has_more) {
+                        hasMore = false;
+                        console.log(`🏁 Fin detectado por servidor en start=${result.start}`);
+                    }
+                } else {
+                    // Fallback legacy por si el server no manda debug info
+                    if (batch.length < limit) {
+                        hasMore = false;
+                        console.log(`🏁 Fin detectado por tamaño de batch (${batch.length} < ${limit}) en start=${result.start}`);
+                    }
                 }
             }
 
