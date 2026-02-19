@@ -60,7 +60,11 @@ window.clearMainSearch = () => {
     admin.performSearch('');
 };
 
+
 window.resetHiddenProducts = () => admin.resetHidden();
+window.forceUpdateCatalog = () => admin.forceUpdate();
+window.openProductModal = () => admin.openProductModal();
+
 window.toggleAdminAccess = () => {
     // Lógica simple de 3 clicks
     if (!window.clickCount) window.clickCount = 0;
@@ -68,6 +72,9 @@ window.toggleAdminAccess = () => {
     setTimeout(() => window.clickCount = 0, 1000);
     if (window.clickCount >= 3) {
         document.getElementById('hiddenControls').style.display = 'flex';
+        // Mostrar también el botón de forzar actualización si estaba oculto
+        const refreshBtn = document.getElementById('refreshBtn');
+        if(refreshBtn) refreshBtn.style.display = 'block';
     }
 };
 
