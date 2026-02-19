@@ -26,10 +26,12 @@ async function initApp() {
             }
         }
 
-        // Si hay red, sincronizar
+        /* 
+        // Deshabilitado por petición del usuario: Solo sync manual
         if (navigator.onLine) {
             startBackgroundSync();
-        }
+        } 
+        */
         
         // Limpieza proactiva de cache
         if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
@@ -55,7 +57,9 @@ setTimeout(() => {
         if (state.products.length > 0) {
              renderer.renderInitial(); // Si ya hay algo, mostrarlo
         } else {
-             renderer.showError('La carga está tardando demasiado. Por favor recarga la página.');
+             // Si no hay datos y no carga, es probable que sea la primera vez en offline
+             // o un error de DB.
+             renderer.showError('No se pudieron cargar datos locales. Por favor conecta a internet y actualiza el catálogo.');
         }
     }
 }, 8000);
@@ -70,9 +74,17 @@ function setupEventListeners() {
         }
     });
 
-    // Eventos de estado de red
-    window.addEventListener('online', () => startBackgroundSync());
-    window.addEventListener('offline', () => console.log('Modo Offline'));
+    // Eventos de estado de red (Solo logging, no sync automática)
+    window.addEventListener('online', () => {
+        console.log('🌐 Conexión restaurada');
+        const indicator = document.getElementById('statusIndicator');
+        if (indicator) indicator.textContent = 'En línea (Sync manual requerida)';
+    });
+    window.addEventListener('offline', () => {
+        console.log('Modo Offline');
+        const indicator = document.getElementById('statusIndicator');
+        if (indicator) indicator.textContent = 'Modo Offline';
+    });
 }
 
 // Exponer funciones globales para el HTML (onclick handlers)
