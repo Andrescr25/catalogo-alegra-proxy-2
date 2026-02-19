@@ -113,12 +113,27 @@ async function cacheFirst(request) {
         
         // Si no está en cache, buscar en red
         console.log('🌐 Cache miss, fetching:', request.url);
-        const networkResponse = await fetch(request);
+
+        // MANEJO DE IMÁGENES CORS (CDN Alegra)
+        // Usamos no-cors para evitar errores, aunque sea opaco
+        let fetchOptions = {};
+        if (request.destination === 'image' && request.url.includes('cdn3.alegra.com')) {
+             fetchOptions = { mode: 'no-cors' };
+        }
+
+        // Clonar request con opciones si es necesario no es directo, 
+        // pero podemos crear nuevo fetch con la URL
+        let networkResponse;
         
-        // Si la respuesta es válida, guardarla en cache
-        if (networkResponse.ok) {
+        if (fetchOptions.mode === 'no-cors') {
+            networkResponse = await fetch(request.url, fetchOptions);
+        } else {
+            networkResponse = await fetch(request);
+        }
+        
+        // Si la respuesta es válida (u opaca para imágenes estáticas), guardarla
+        if (networkResponse.ok || (networkResponse.type === 'opaque')) {
             const cache = await caches.open(CACHE_NAME);
-            // Clonar la respuesta porque solo se puede leer una vez
             cache.put(request, networkResponse.clone());
         }
         
@@ -130,11 +145,15 @@ async function cacheFirst(request) {
         // Si falla todo, intentar devolver cache aunque sea viejo
         const cachedResponse = await caches.match(request);
         if (cachedResponse) {
-            console.log('📦 Usando cache como fallback para:', request.url);
             return cachedResponse;
         }
         
-        // Si tampoco hay cache, devolver error
+        // Retornar fallback para imágenes si falla todo
+        if (request.destination === 'image') {
+             // Podríamos retornar un SVG placeholder
+             return new Response('<svg>...</svg>', { headers: { 'Content-Type': 'image/svg+xml' }});
+        }
+
         throw error;
     }
 }
