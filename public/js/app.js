@@ -30,6 +30,11 @@ async function initApp() {
         if (navigator.onLine) {
             startBackgroundSync();
         }
+        
+        // Limpieza proactiva de cache
+        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({ type: 'CLEAN_CACHE' });
+        }
 
         setupEventListeners();
         
@@ -38,8 +43,22 @@ async function initApp() {
 
     } catch (error) {
         console.error('Error init:', error);
+        renderer.showError('Error iniciando aplicación: ' + error.message);
     }
 }
+
+// Timeout de seguridad por si se cuelga la carga
+setTimeout(() => {
+    const loading = document.getElementById('loading');
+    if (loading && document.body.contains(loading)) {
+        console.warn('⚠️ Safety Timeout: App taking too long to load.');
+        if (state.products.length > 0) {
+             renderer.renderInitial(); // Si ya hay algo, mostrarlo
+        } else {
+             renderer.showError('La carga está tardando demasiado. Por favor recarga la página.');
+        }
+    }
+}, 8000);
 
 function setupEventListeners() {
     // Scroll infinito

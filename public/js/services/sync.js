@@ -14,6 +14,7 @@ export async function startBackgroundSync(force = false) {
     };
 
     updateStatus('🔄 Sincronizando...');
+    updateSyncUI('Iniciando sincronización...', 5);
     
     try {
         let start = 0;
