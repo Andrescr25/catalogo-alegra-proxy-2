@@ -17,7 +17,7 @@ export async function startBackgroundSync(force = false) {
     
     try {
         let start = 0;
-        const limit = 50; 
+        const limit = 30; // ⚠️ IMPORTANTE: Alegra tiene límite duro de 30. No subir.
         let hasMore = true;
         let totalSynced = 0;
         let newBuffer = [];

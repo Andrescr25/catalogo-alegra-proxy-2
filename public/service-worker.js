@@ -111,10 +111,7 @@ async function cacheFirst(request) {
 
         // Manejo especial para imágenes de CDN (Alegra)
         if (request.destination === 'image' && request.url.includes('cdn3.alegra.com')) {
-            // Si la petición original es 'no-cors' (<img> normal), podemos devolver opaco
-            // Si es 'cors', NO podemos devolver opaco.
-            // Pero las imágenes en HTML son no-cors por defecto.
-            
+            // Caso 1: Request permite 'no-cors' (ej: <img> tag standard)
             if (request.mode === 'no-cors' || request.mode === 'navigate') { 
                 try {
                     const fetchOptions = {
@@ -131,15 +128,33 @@ async function cacheFirst(request) {
                     console.warn('Fallo imagen CDN (no-cors):', request.url);
                 }
             }
-            // Si es cors, intentamos fetch normal, si falla (CORS), devolvemos fallback
+            // Caso 2: Request REQUIERE CORS (ej: scripts, extensions, o fetch explícito)
+            // Intentamos fetch normal (cors). Si falla, DEBEMOS devolver fallback, NO opaco.
+            else {
+                 try {
+                    const networkResponse = await fetch(request);
+                    if (networkResponse.ok) {
+                         const cache = await caches.open(CACHE_NAME);
+                         cache.put(request, networkResponse.clone());
+                         return networkResponse;
+                    }
+                 } catch (e) {
+                     // Si falla CORS, caemos al fallback de abajo
+                     console.warn('Fallo imagen CDN (CORS):', request.url);
+                 }
+            }
+        } else {
+            // Fetch normal para otros recursos
+            const networkResponse = await fetch(request);
+            if (networkResponse.ok) {
+                const cache = await caches.open(CACHE_NAME);
+                cache.put(request, networkResponse.clone());
+            }
+            return networkResponse;
         }
-
-        const networkResponse = await fetch(request);
-        if (networkResponse.ok) {
-            const cache = await caches.open(CACHE_NAME);
-            cache.put(request, networkResponse.clone());
-        }
-        return networkResponse;
+        
+        // Si llegamos aquí para una imagen y no retornamos nada, tirar error para activar catch
+        throw new Error('Image fetch failed');
 
     } catch (error) {
         // Fallback para imágenes si falla todo (incluyendo CORS)
