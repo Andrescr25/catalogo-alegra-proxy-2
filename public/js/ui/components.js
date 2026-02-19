@@ -28,13 +28,11 @@ export function createProductCard(product) {
         const favoriteImage = product.images.find(img => img.favorite === true) || product.images[0];
         if (favoriteImage && favoriteImage.url) {
             imageHtml = `
-                <div class="product-image-wrapper">
-                    <img class="product-image" 
-                         loading="lazy"
-                         src="${favoriteImage.url}" 
-                         alt="${product.name}"
-                         onerror="this.parentElement.innerHTML='<div class=\\'product-image-placeholder\\'>📦</div>'">
-                </div>
+                <img class="product-image" 
+                     loading="lazy"
+                     src="${favoriteImage.url}" 
+                     alt="${product.name}"
+                     onerror="this.parentElement.innerHTML='<div class=\\'product-image-placeholder\\'>📦</div>'">
             `;
         }
     }
@@ -48,11 +46,16 @@ export function createProductCard(product) {
         ${isHidden ? '<div class="hidden-indicator">Oculto</div>' : ''}
         <div class="product-image-container">${imageHtml}</div>
         <div class="product-info">
-            <div class="product-name">${product.name}</div>
-            <div class="product-reference">Ref: ${product.reference?.reference || 'N/A'}</div>
-            <div class="product-price">${currency}${priceInfo.finalPrice.toLocaleString()}</div>
-            ${priceBreakdown}
-            <div class="product-stock ${stockClass}">${stockText}</div>
+            <div>
+                <div class="product-name" title="${product.name}">${product.name}</div>
+                <div class="product-reference">Ref: ${product.reference?.reference || 'N/A'}</div>
+            </div>
+            
+            <div class="product-footer">
+                <div class="product-price">${currency}${priceInfo.finalPrice.toLocaleString()}</div>
+                ${priceBreakdown}
+                <div class="product-stock ${stockClass}">${stockText}</div>
+            </div>
         </div>
     `;
 
