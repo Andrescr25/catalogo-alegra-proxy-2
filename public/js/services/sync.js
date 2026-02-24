@@ -129,13 +129,57 @@ export async function startBackgroundSync(force = false) {
         const allProducts = await dbData.getAllProducts();
         state.setProducts(allProducts);
         
+        // --- PRE-CACHE DE IMÁGENES ---
+        updateStatus('📥 Preparando descarga de imágenes...');
+        updateSyncUI('Preparando imágenes...', 0);
+        
+        const imageUrls = new Set();
+        allProducts.forEach(product => {
+            if (product.images && product.images.length > 0) {
+                const favoriteImage = product.images.find(img => img.favorite === true) || product.images[0];
+                if (favoriteImage && favoriteImage.url) {
+                    imageUrls.add(favoriteImage.url);
+                }
+            }
+        });
+
+        const urlsArray = Array.from(imageUrls);
+        const totalImages = urlsArray.length;
+        let downloadedImages = 0;
+
+        if (totalImages > 0) {
+            updateStatus(`🖼️ Descargando listado de ${totalImages} imágenes...`);
+            
+            const PREFETCH_CONCURRENCY = 10;
+            for (let i = 0; i < urlsArray.length; i += PREFETCH_CONCURRENCY) {
+                const chunk = urlsArray.slice(i, i + PREFETCH_CONCURRENCY);
+                
+                const promises = chunk.map(url => {
+                    return new Promise((resolve) => {
+                        const img = new Image();
+                        img.onload = () => resolve();
+                        img.onerror = () => resolve(); // Resolvemos igual para no bloquear
+                        img.src = url; // Esto dispara la petición al Service Worker
+                    });
+                });
+                
+                await Promise.all(promises);
+                downloadedImages += chunk.length;
+                
+                const progress = Math.min(100, (downloadedImages / totalImages) * 100);
+                updateSyncUI(`Guardando imágenes: ${Math.min(downloadedImages, totalImages)} / ${totalImages}`, progress);
+                updateStatus(`🖼️ Imágenes guardadas: ${Math.min(downloadedImages, totalImages)}/${totalImages}`);
+            }
+        }
+        // --- FIN PRE-CACHE ---
+
         // Refrescar UI si no hay búsqueda activa
         if (!document.getElementById('mainSearch').value.trim()) {
             renderer.updateCategoryCounts();
             if (renderer.renderedCount === 0) renderer.renderInitial();
         }
 
-        updateStatus(`✅ Sincronizado (${allProducts.length})`);
+        updateStatus(`✅ Sincronizado (${allProducts.length} prod / ${totalImages} img)`);
         showBanner('Sincronización completada', 'success');
 
         updateStatus('⚠️ Offline / Error');

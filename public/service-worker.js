@@ -21,7 +21,7 @@ const API_PATTERNS = [
     '/api/productos'
 ];
 
-const CACHE_NAME = 'catalogo-v1.7';
+const CACHE_NAME = 'catalogo-v1.8';
 
 // Instalación del Service Worker
 self.addEventListener('install', (event) => {
