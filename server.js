@@ -386,8 +386,8 @@ app.get('/api/categorias', async (req, res) => {
     }
 });
 
-// Servir archivos estáticos desde 'public'
-app.use(express.static('public'));
+// Servir archivos estáticos desde 'frontend/dist' (Build de Vite React)
+app.use(express.static(path.join(__dirname, 'frontend', 'dist')));
 
 // ← MEJORADO: Endpoint de salud con más información
 app.get('/health', (req, res) => {
@@ -437,8 +437,8 @@ app.use('*', (req, res) => {
         });
     }
     
-    // Para rutas del frontend, servir index.html (SPA)
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    // Para rutas del frontend, servir index.html de Vite (SPA)
+    res.sendFile(path.join(__dirname, 'frontend', 'dist', 'index.html'));
 });
 
 // ← AGREGADO: Manejo global de errores
