@@ -38,12 +38,11 @@ export const Header = () => {
 
     return (
         <header className="app-header header" id="mainHeader">
-            <div className="header-top" style={{ justifyContent: 'center', position: 'relative' }}>
-                <div className="logo-section" onClick={handleLogoClick} style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div className="header-top">
+                <div className="logo-section" onClick={handleLogoClick}>
                     <img src="/color2.png" alt="Logo" className="company-logo" />
                 </div>
-                {/* Ocultar botón "Actualizar Catálogo" en mobile si se quiere más limpio, o ponerlo pequeño arriba a la derecha */}
-                <div className="header-actions" style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)' }}>
+                <div className="header-actions">
                     <button
                         className="btn btn-outline"
                         onClick={synchronize}
@@ -53,10 +52,13 @@ export const Header = () => {
                         {isSyncing ? (
                             <>
                                 <Loader2 className="btn-icon spin" size={16} />
-                                Actualizando...
+                                <span className="btn-text">Actualizando...</span>
                             </>
                         ) : (
-                            'Actualizar Catálogo'
+                            <>
+                                <Loader2 className="btn-icon" size={16} style={{ display: 'none' }} /> {/* Placeholder for gap */}
+                                <span className="btn-text">Actualizar Catálogo</span>
+                            </>
                         )}
                     </button>
                     {/* Placeholder for menu button if needed */}
