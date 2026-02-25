@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, X, Loader2, Info } from 'lucide-react';
 import { useAppContext } from '../core/AppContext';
 import { useSync } from '../hooks/useSync';
@@ -6,6 +6,27 @@ import { useSync } from '../hooks/useSync';
 export const Header = () => {
     const { searchQuery, setSearchQuery, isSyncing, lastSync, setIsAdminMode } = useAppContext();
     const { synchronize } = useSync();
+
+    // Scroll state logic
+    const [isVisible, setIsVisible] = useState(true);
+    const [lastScrollY, setLastScrollY] = useState(0);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            if (typeof window !== 'undefined') {
+                const currentScrollY = window.scrollY;
+                if (currentScrollY > lastScrollY && currentScrollY > 100) {
+                    setIsVisible(false); // scrolling down
+                } else if (currentScrollY < lastScrollY) {
+                    setIsVisible(true);  // scrolling up
+                }
+                setLastScrollY(currentScrollY);
+            }
+        };
+
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, [lastScrollY]);
 
     // Admin unlock logic
     const [clickCount, setClickCount] = useState(0);
@@ -37,7 +58,7 @@ export const Header = () => {
     };
 
     return (
-        <header className="app-header header" id="mainHeader">
+        <header className={`app-header header ${isVisible ? '' : 'header-hidden'}`} id="mainHeader">
             <div className="header-top">
                 <div className="logo-section" onClick={handleLogoClick}>
                     <img src="/color2.png" alt="Logo" className="company-logo" />
