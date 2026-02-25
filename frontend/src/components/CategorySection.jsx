@@ -10,7 +10,7 @@ export const CategorySection = ({ title, products }) => {
                 <h2 className="category-title">{title}</h2>
                 <span className="category-count">{products.length} productos</span>
             </div>
-            <div className="product-grid">
+            <div className="products-grid">
                 {products.map(product => (
                     <ProductCard key={product.id} product={product} />
                 ))}
