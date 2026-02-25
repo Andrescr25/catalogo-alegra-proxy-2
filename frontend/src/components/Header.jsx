@@ -37,12 +37,13 @@ export const Header = () => {
     };
 
     return (
-        <header className="app-header">
-            <div className="header-top">
-                <div className="logo" onClick={handleLogoClick}>
-                    Catálogo
+        <header className="app-header header" id="mainHeader">
+            <div className="header-top" style={{ justifyContent: 'center', position: 'relative' }}>
+                <div className="logo-section" onClick={handleLogoClick} style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <img src="/color2.png" alt="Logo" className="company-logo" />
                 </div>
-                <div className="header-actions">
+                {/* Ocultar botón "Actualizar Catálogo" en mobile si se quiere más limpio, o ponerlo pequeño arriba a la derecha */}
+                <div className="header-actions" style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)' }}>
                     <button
                         className="btn btn-outline"
                         onClick={synchronize}

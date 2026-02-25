@@ -5,8 +5,10 @@ export const ProductCard = ({ product }) => {
     const { isAdminMode } = useAppContext();
     const isHidden = false; // Simplified for now, can add logic if needed
 
-    // Generate image HTML (same logic as before)
-    let imageUrl = '/color2.png'; // Fallback
+    // Fallback simple gris
+    const placeholderImg = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect width="200" height="200" fill="%23f0f0f0"/><path d="M70,90 l20,20 l40,-40" stroke="%23cccccc" stroke-width="8" fill="none"/></svg>';
+
+    let imageUrl = placeholderImg;
     if (product.images && product.images.length > 0) {
         const favoriteImage = product.images.find(img => img.favorite === true) || product.images[0];
         if (favoriteImage && favoriteImage.url) {
@@ -42,14 +44,14 @@ export const ProductCard = ({ product }) => {
     }
 
     let stockClass = 'stock-in';
-    let stockText = `${availableQuantity} disponibles`;
+    let stockText = `${availableQuantity} disp.`;
 
     if (availableQuantity <= 0) {
         stockClass = 'stock-out';
         stockText = 'Agotado';
     } else if (availableQuantity <= 5) {
         stockClass = 'stock-low';
-        stockText = `¡Solo ${availableQuantity} disponibles!`;
+        stockText = `¡Solo ${availableQuantity}!`;
     }
 
     return (
@@ -62,7 +64,7 @@ export const ProductCard = ({ product }) => {
                     alt={product.name}
                     className="product-image"
                     loading="lazy"
-                    onError={(e) => { e.target.onerror = null; e.target.src = '/color2.png'; }}
+                    onError={(e) => { e.target.onerror = null; e.target.src = placeholderImg; }}
                 />
             </div>
 
