@@ -49,13 +49,17 @@ export const AppProvider = ({ children }) => {
         // Group by category
         const categories = {};
         result.forEach(p => {
-            const catName = p.category?.name || 'Otros';
+            const catName = p.itemCategory?.name || 'Otros';
             if (!categories[catName]) categories[catName] = [];
             categories[catName].push(p);
         });
 
-        // Sort keys
-        const sortedKeys = Object.keys(categories).sort();
+        // Sort keys (move 'Otros' to end)
+        const sortedKeys = Object.keys(categories).sort((a, b) => {
+            if (a === 'Otros') return 1;
+            if (b === 'Otros') return -1;
+            return a.localeCompare(b);
+        });
         return { flat: result, grouped: categories, sortedKeys };
     }, [products, searchQuery]);
 
