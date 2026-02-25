@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Search, X, Loader2, Info } from 'lucide-react';
 import { useAppContext } from '../core/AppContext';
 import { useSync } from '../hooks/useSync';
@@ -10,23 +10,60 @@ export const Header = () => {
     // Scroll state logic
     const [isVisible, setIsVisible] = useState(true);
     const [lastScrollY, setLastScrollY] = useState(0);
+    const [isOnline, setIsOnline] = useState(navigator.onLine);
 
     useEffect(() => {
+        const handleOnline = () => setIsOnline(true);
+        const handleOffline = () => setIsOnline(false);
+        window.addEventListener('online', handleOnline);
+        window.addEventListener('offline', handleOffline);
+
         const handleScroll = () => {
             if (typeof window !== 'undefined') {
                 const currentScrollY = window.scrollY;
                 if (currentScrollY > lastScrollY && currentScrollY > 100) {
-                    setIsVisible(false); // scrolling down
+                    setIsVisible(false);
                 } else if (currentScrollY < lastScrollY) {
-                    setIsVisible(true);  // scrolling up
+                    setIsVisible(true);
                 }
                 setLastScrollY(currentScrollY);
             }
         };
 
         window.addEventListener('scroll', handleScroll, { passive: true });
-        return () => window.removeEventListener('scroll', handleScroll);
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+            window.removeEventListener('online', handleOnline);
+            window.removeEventListener('offline', handleOffline);
+        };
     }, [lastScrollY]);
+
+    // Long press logic for sync
+    const [isPressing, setIsPressing] = useState(false);
+    const pressTimer = useRef(null);
+
+    const handlePointerDown = (e) => {
+        if (isSyncing || !isOnline || e.button !== 0) return;
+        setIsPressing(true);
+        pressTimer.current = setTimeout(() => {
+            setIsPressing(false);
+            synchronize();
+        }, 3000);
+    };
+
+    const handlePointerUpOrLeave = () => {
+        if (pressTimer.current) {
+            clearTimeout(pressTimer.current);
+            pressTimer.current = null;
+        }
+        setIsPressing(false);
+    };
+
+    useEffect(() => {
+        return () => {
+            if (pressTimer.current) clearTimeout(pressTimer.current);
+        };
+    }, []);
 
     // Admin unlock logic
     const [clickCount, setClickCount] = useState(0);
@@ -65,11 +102,16 @@ export const Header = () => {
                 </div>
                 <div className="header-actions">
                     <button
-                        className="btn btn-outline"
-                        onClick={synchronize}
-                        disabled={isSyncing}
+                        className={`btn btn-outline ${isPressing ? 'pressing' : ''}`}
+                        onPointerDown={handlePointerDown}
+                        onPointerUp={handlePointerUpOrLeave}
+                        onPointerLeave={handlePointerUpOrLeave}
+                        onContextMenu={(e) => e.preventDefault()}
+                        disabled={isSyncing || !isOnline}
                         id="updateBtn"
+                        style={{ position: 'relative', overflow: 'hidden' }}
                     >
+                        {isPressing && <div className="press-progress"></div>}
                         {isSyncing ? (
                             <>
                                 <Loader2 className="btn-icon spin" size={16} />
@@ -88,7 +130,7 @@ export const Header = () => {
 
             <div className="sync-info">
                 <div className="sync-status" id="statusIndicator">
-                    {isSyncing ? 'Sincronizando...' : (navigator.onLine ? 'En línea' : 'Modo Offline')}
+                    {isSyncing ? 'Sincronizando...' : (isOnline ? 'En línea' : 'Modo Offline')}
                 </div>
                 <div className="last-sync-time">
                     Última act: <span id="lastUpdateSpan">{formatDate(lastSync)}</span>
@@ -121,7 +163,7 @@ export const Header = () => {
                 </div>
             </div>
 
-            <div id="offlineBanner" className="offline-banner" style={{ display: navigator.onLine ? 'none' : 'flex' }}>
+            <div id="offlineBanner" className="offline-banner" style={{ display: isOnline ? 'none' : 'flex' }}>
                 <Info size={16} /> Estás viendo la versión offline guardada en este dispositivo
             </div>
         </header>
